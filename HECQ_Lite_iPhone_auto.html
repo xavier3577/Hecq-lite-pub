@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>HECQ-code Lite</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+           margin: 20px; background:#0f1115; color:#eaeef5; line-height:1.5; }
+    h1 { margin:0 0 10px 0; font-size:22px; }
+    textarea { width:100%; min-height:140px; padding:12px; font-size:17px; border-radius:8px;
+               border:1px solid #333; background:#1b1f27; color:#eaeef5; }
+    .btn { padding:10px 14px; border-radius:8px; border:1px solid #333; background:#171b22; color:#fff; font-size:15px; margin:4px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .alphabet { display:grid; grid-template-columns:repeat(13,1fr); gap:6px; margin-top:10px; }
+    .cell { padding:6px 0; border:1px solid #333; border-radius:6px; text-align:center; }
+  </style>
+</head>
+<body>
+  <h1>HECQ-code Lite (ROT13)</h1>
+  <p>Tape ton texte et il sera converti automatiquement (option : ROT5 pour chiffres).</p>
+
+  <label for="input"><b>Texte</b></label>
+  <textarea id="input" placeholder="Écris ici…">BONJOUR</textarea>
+
+  <div class="row">
+    <label><input type="checkbox" id="rot5"> ROT5 chiffres</label>
+    <button class="btn" id="swap">Échanger</button>
+    <button class="btn" id="clear">Effacer</button>
+  </div>
+
+  <label for="output"><b>Résultat</b></label>
+  <textarea id="output" readonly></textarea>
+
+  <div class="alphabet" id="alphabetGrid"></div>
+
+<script>
+(function(){
+  function stripAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function r13(c){const n=c.charCodeAt(0);
+    if(n>=65&&n<=90)return String.fromCharCode(((n-65+13)%26)+65);
+    if(n>=97&&n<=122)return String.fromCharCode(((n-97+13)%26)+97);
+    return c;}
+  function r5(c){const n=c.charCodeAt(0);if(n>=48&&n<=57)return String.fromCharCode(((n-48+5)%10)+48);return c;}
+  function convert(t,useR5){t=stripAccents(t).toUpperCase();let o='';for(let i=0;i<t.length;i++){const rr=r13(t[i]);o+=useR5?r5(rr):rr;}return o;}
+
+  const $i=document.getElementById('input'), $o=document.getElementById('output'), $r5=document.getElementById('rot5');
+  function update(){ $o.value=convert($i.value,$r5.checked); }
+  $i.addEventListener('input',update);$r5.addEventListener('change',update);
+  document.getElementById('clear').addEventListener('click',()=>{$i.value='';$o.value='';$i.focus();});
+  document.getElementById('swap').addEventListener('click',()=>{const t=$i.value;$i.value=$o.value;$o.value=t;update();$i.focus();});
+
+  function renderAlphabet(){
+    const g=document.getElementById('alphabetGrid');
+    const top='ABCDEFGHIJKLM'.split('');const bot='NOPQRSTUVWXYZ'.split('');
+    for(let i=0;i<13;i++){const d=document.createElement('div');d.className='cell';d.innerHTML=`${top[i]} ↔ ${bot[i]}`;g.appendChild(d);}
+  }
+  renderAlphabet();
+  // Run once on load
+  update();
+})(); 
+</script>
+</body>
+</html>
