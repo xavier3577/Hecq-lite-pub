@@ -5,233 +5,179 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HECQ Secure — Argon2id + AES-GCM</title>
 
-<!-- Librairies (CDN) -->
+<!-- Librairies -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/argon2-browser/1.18.0/argon2.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 
 <style>
-  :root{
-    --bg:#070a12; --panel:#121628; --line:#24324a; --txt:#e8eef6;
-    --accent1:#1ec8ff; --accent2:#9c4dff; --ok:#2ecc71; --warn:#f39c12;
+  body{
+    margin:0;
+    font-family:"Segoe UI",Roboto,Arial,sans-serif;
+    background:radial-gradient(circle at top,#0d1117,#000);
+    color:#e8eef6;
   }
-  *{box-sizing:border-box}
-  body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
-       color:var(--txt); background:radial-gradient(1200px 600px at 50% -10%,#111a2a 0%,#070a12 50%,#000 100%);}
-  .container{max-width:760px;margin:24px auto;padding:0 16px}
-  h1{margin:0 0 8px;text-align:center;letter-spacing:.5px;
-     color:#9fe8ff;text-shadow:0 0 10px rgba(30,200,255,.6)}
-  .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
-  .badge{padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#0d1324}
-  .badge.ok{border-color:#1b7542;color:#b9ffd1}
-  .badge.warn{border-color:#8a5c1a;color:#ffe0a6}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0;
-        box-shadow:0 0 20px rgba(156,77,255,.08)}
-  label{display:block;margin:4px 0 8px;color:#bfe8ff;font-weight:600}
-  .row{display:flex;gap:10px;align-items:center}
-  input,textarea{width:100%;background:#0b1020;color:#fff;border:1px solid #22314a;border-radius:10px;
-                 padding:12px 14px;font-size:15px;outline:none;box-shadow:inset 0 0 10px rgba(30,200,255,.1)}
+  .container{max-width:800px;margin:24px auto;padding:0 16px}
+  h1{text-align:center;margin-bottom:6px;
+     color:#00eaff;text-shadow:0 0 12px rgba(0,234,255,.6)}
+  .badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+  .badge{padding:6px 12px;border-radius:20px;font-size:13px;
+         border:1px solid #333;background:#111}
+  .ok{border-color:#1ec87c;color:#9fffc4}
+  .warn{border-color:#c77c2e;color:#ffd9a6}
+  .card{background:#111a2b;border:1px solid #24314a;border-radius:12px;
+        padding:16px;margin:14px 0;box-shadow:0 0 18px rgba(0,234,255,.08)}
+  label{font-weight:600;color:#9feaff;margin-bottom:6px;display:block}
+  input,textarea{width:100%;padding:12px 14px;margin-bottom:8px;
+    background:#0c1220;color:#fff;border:1px solid #2a3b55;border-radius:10px;
+    font-size:15px;outline:none}
   textarea{min-height:110px;resize:vertical}
-  .btn{border:0;border-radius:10px;padding:10px 16px;font-weight:700;color:#fff;cursor:pointer;
-       background:linear-gradient(135deg,var(--accent1),var(--accent2));
-       box-shadow:0 8px 20px rgba(30,200,255,.2);transition:.15s}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(156,77,255,.28)}
-  .btn.ghost{background:#0b1020;border:1px solid #2b3a57}
-  .right{justify-content:flex-end}
-  .strength{height:10px;border-radius:6px;background:#222;margin-top:8px;overflow:hidden}
-  .strength > span{display:block;height:100%;width:0;background:linear-gradient(90deg,red,orange,yellow,lime);
-                   box-shadow:0 0 10px rgba(0,255,0,.6);transition:width .35s}
-  .eye{min-width:44px;height:44px;display:grid;place-items:center;border:1px solid #2b3a57;border-radius:10px;
-       background:#0b1020;color:#9cc0ff;cursor:pointer}
+  .row{display:flex;gap:10px;align-items:center}
+  .btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;color:#fff;cursor:pointer;
+       background:linear-gradient(135deg,#00eaff,#9c4dff);
+       box-shadow:0 6px 16px rgba(0,234,255,.2);transition:.2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(156,77,255,.28)}
+  .ghost{background:#0c1220;border:1px solid #2a3b55}
+  .eye{min-width:44px;height:44px;display:grid;place-items:center;border:1px solid #2a3b55;
+       border-radius:10px;background:#0c1220;color:#9cc0ff;cursor:pointer}
+  .strength{height:10px;border-radius:6px;background:#222;margin-bottom:6px;overflow:hidden}
+  .strength span{display:block;height:100%;width:0;background:linear-gradient(90deg,red,orange,yellow,lime);
+                 transition:width .3s}
   .qr{display:grid;place-items:center;margin-top:10px}
+  .disclaimer{margin:30px 0;padding:14px;border:1px solid #333;border-radius:8px;
+              background:#0c1220;color:#aaa;font-size:12px;line-height:1.5;text-align:center}
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>HECQ Secure — Argon2id + AES-GCM</h1>
+<div class="container">
+  <h1>HECQ Secure — Argon2id + AES-GCM</h1>
 
-    <div class="badges">
-      <span id="badgeOnline" class="badge">État : …</span>
-      <span id="badgeArgon"  class="badge">Argon2 : …</span>
+  <div class="badges">
+    <span id="badgeOnline" class="badge">État…</span>
+    <span id="badgeArgon" class="badge">Argon2…</span>
+  </div>
+
+  <!-- Mot de passe -->
+  <div class="card">
+    <label>Mot de passe</label>
+    <div class="row">
+      <input id="password" type="password" placeholder="Mot de passe robuste (12+ caractères)">
+      <button id="toggleEye" class="eye">👁️</button>
+      <button id="genPass" class="btn">Générer</button>
     </div>
+    <div class="strength"><span id="strengthFill"></span></div>
+  </div>
 
-    <!-- Mot de passe -->
-    <div class="card">
-      <label>Mot de passe</label>
-      <div class="row">
-        <input id="password" type="password" placeholder="Mot de passe robuste (12+ caractères)">
-        <button id="toggleEye" class="eye" title="Afficher/Masquer">👁️</button>
-        <button id="genPass" class="btn">Générer</button>
-      </div>
-      <div class="strength"><span id="strengthFill"></span></div>
-    </div>
-
-    <!-- Texte clair -->
-    <div class="card">
-      <label>Texte en clair</label>
-      <textarea id="plain" placeholder="Écris ton message ici"></textarea>
-      <div class="row right">
-        <button id="encrypt" class="btn">Chiffrer</button>
-        <button id="clear" class="btn ghost">Effacer</button>
-      </div>
-    </div>
-
-    <!-- Résultat -->
-    <div class="card">
-      <label>Résultat (paquet chiffré JSON Base64)</label>
-      <textarea id="cipher" readonly></textarea>
-      <div class="row right">
-        <button id="copy"   class="btn ghost">Copier</button>
-        <button id="makeQR" class="btn">Générer QR</button>
-      </div>
-      <div id="qr" class="qr"></div>
-    </div>
-
-    <!-- Déchiffrement -->
-    <div class="card">
-      <label>Texte chiffré à déchiffrer</label>
-      <textarea id="toDecrypt" placeholder='Colle ici le paquet JSON généré'></textarea>
-      <div class="row right">
-        <button id="decrypt" class="btn">Déchiffrer</button>
-      </div>
-      <textarea id="decrypted" readonly placeholder="Résultat du déchiffrement"></textarea>
+  <!-- Texte clair -->
+  <div class="card">
+    <label>Texte en clair</label>
+    <textarea id="plain" placeholder="Écris ton message ici"></textarea>
+    <div class="row" style="justify-content:flex-end">
+      <button id="encrypt" class="btn">Chiffrer</button>
+      <button id="clear" class="btn ghost">Effacer</button>
     </div>
   </div>
 
+  <!-- Résultat -->
+  <div class="card">
+    <label>Résultat (paquet chiffré JSON)</label>
+    <textarea id="cipher" readonly></textarea>
+    <div class="row" style="justify-content:flex-end">
+      <button id="copy" class="btn ghost">Copier</button>
+      <button id="makeQR" class="btn">Générer QR</button>
+    </div>
+    <div id="qr" class="qr"></div>
+  </div>
+
+  <!-- Déchiffrement -->
+  <div class="card">
+    <label>Texte chiffré à déchiffrer</label>
+    <textarea id="toDecrypt" placeholder="Colle ici le paquet JSON"></textarea>
+    <div class="row" style="justify-content:flex-end">
+      <button id="decrypt" class="btn">Déchiffrer</button>
+    </div>
+    <textarea id="decrypted" readonly placeholder="Résultat du déchiffrement"></textarea>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    ⚠️ <b>Disclaimer / Mentions légales :</b><br>
+    HECQ Secure est une application de chiffrement locale. Aucune donnée n’est envoyée ni stockée sur un serveur.<br>
+    L’auteur décline toute responsabilité en cas d’usage illégal ou contraire aux lois en vigueur.<br>
+    L’application est fournie <i>“en l’état”</i>, sans garantie. L’utilisateur est seul responsable du choix de son mot de passe et de l’usage qui est fait de l’application.
+  </div>
+</div>
+
 <script>
-/* ---------- UI helpers ---------- */
-const $ = id => document.getElementById(id);
-const enc = s => new TextEncoder().encode(s);
-const dec = b => new TextDecoder().decode(b);
-const b64e = u8 => btoa(String.fromCharCode(...u8));
-const b64d = s  => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const $=id=>document.getElementById(id);
+const enc=s=>new TextEncoder().encode(s);
+const dec=b=>new TextDecoder().decode(b);
+const b64e=u8=>btoa(String.fromCharCode(...u8));
+const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 
-function setBadge(el, text, cls){
-  el.className = "badge " + (cls||""); el.textContent = text;
-}
-function refreshOnline(){
-  setBadge($("badgeOnline"), navigator.onLine ? "En ligne" : "Hors-ligne",
-           navigator.onLine ? "ok" : "warn");
-}
-window.addEventListener("online",  refreshOnline);
-window.addEventListener("offline", refreshOnline);
+function setBadge(el,text,cls){el.className="badge "+(cls||"");el.textContent=text;}
+function refreshOnline(){setBadge($("badgeOnline"),navigator.onLine?"En ligne":"Hors-ligne",navigator.onLine?"ok":"warn");}
+window.addEventListener("online",refreshOnline);window.addEventListener("offline",refreshOnline);
 
-/* ---------- Password UI ---------- */
-$("toggleEye").onclick = () => {
-  const p = $("password");
-  p.type = (p.type === "password") ? "text" : "password";
-};
-$("genPass").onclick = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-  let pass = "";
-  for (let i=0;i<21;i++) pass += chars[Math.floor(Math.random()*chars.length)];
-  $("password").value = pass;
-  updateStrength(pass);
-};
-$("password").addEventListener("input", e => updateStrength(e.target.value));
-function updateStrength(pw){
-  $("strengthFill").style.width = Math.min(pw.length*5,100) + "%";
-}
+// œil
+$("toggleEye").onclick=()=>{let p=$("password");p.type=(p.type==="password")?"text":"password";};
+// générer
+$("genPass").onclick=()=>{const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+ let pass="";for(let i=0;i<21;i++)pass+=chars[Math.floor(Math.random()*chars.length)];
+ $("password").value=pass;updateStrength(pass);}
+$("password").addEventListener("input",e=>updateStrength(e.target.value));
+function updateStrength(pw){$("strengthFill").style.width=Math.min(pw.length*5,100)+"%";}
 
-/* ---------- KDF: Argon2id (CDN) ou PBKDF2 (repli) ---------- */
-async function deriveKey(password, salt){
-  if (window.argon2 && argon2.hash) {
-    try {
-      const res = await argon2.hash({
-        pass: password,
-        salt, type: argon2.ArgonType.Argon2id,
-        mem: 65536, time: 3, parallelism: 1, hashLen: 32
-      });
-      // res.hash est un Uint8Array
-      setBadge($("badgeArgon"), "Argon2id chargé", "ok");
-      return crypto.subtle.importKey("raw", res.hash, "AES-GCM", false, ["encrypt","decrypt"]);
-    } catch(e){
-      console.warn("Argon2 échec, repli PBKDF2:", e);
-    }
-  }
-  // Repli PBKDF2-SHA256
-  setBadge($("badgeArgon"), "Repli PBKDF2", "warn");
-  const keyMaterial = await crypto.subtle.importKey("raw", enc(password), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey(
-    { name:"PBKDF2", salt, iterations:100000, hash:"SHA-256" },
-    keyMaterial,
-    { name:"AES-GCM", length:256 },
-    false, ["encrypt","decrypt"]
-  );
+// deriveKey
+async function deriveKey(password,salt){
+ if(window.argon2&&argon2.hash){
+   try{
+     const res=await argon2.hash({pass:password,salt,type:argon2.ArgonType.Argon2id,mem:65536,time:3,parallelism:1,hashLen:32});
+     setBadge($("badgeArgon"),"Argon2id chargé","ok");
+     return crypto.subtle.importKey("raw",res.hash,"AES-GCM",false,["encrypt","decrypt"]);
+   }catch(e){console.warn("Argon2 fail, fallback PBKDF2",e);}
+ }
+ setBadge($("badgeArgon"),"Repli PBKDF2","warn");
+ const keyMaterial=await crypto.subtle.importKey("raw",enc(password),"PBKDF2",false,["deriveKey"]);
+ return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"},
+   keyMaterial,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
 }
 
-/* ---------- Chiffrer ---------- */
-$("encrypt").onclick = async () => {
-  try{
-    const plain = $("plain").value.trim();
-    const password = $("password").value;
-    if (!plain || !password) return alert("Texte ou mot de passe manquant.");
-
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv   = crypto.getRandomValues(new Uint8Array(12));
-    const key  = await deriveKey(password, salt);
-
-    const ctBuf = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc(plain));
-    const packet = {
-      v:1, alg:"AES-GCM",
-      kdf: (window.argon2 && argon2.hash) ? "argon2id" : "pbkdf2-sha256",
-      params: (window.argon2 && argon2.hash)
-                ? {time:3, mem:65536, par:1}
-                : {iter:100000},
-      salt: b64e(salt), iv: b64e(iv),
-      ct: b64e(new Uint8Array(ctBuf))
-    };
-    const json = JSON.stringify(packet);
-    $("cipher").value = json;
-    $("qr").innerHTML = "";
-    try{ await navigator.clipboard.writeText(json); }catch{}
-  }catch(e){
-    alert("Erreur chiffrement : " + e.message);
-  }
+// encrypt
+$("encrypt").onclick=async()=>{
+ try{
+   const plain=$("plain").value.trim();const password=$("password").value;
+   if(!plain||!password)return alert("Texte ou mot de passe manquant");
+   const salt=crypto.getRandomValues(new Uint8Array(16));
+   const iv=crypto.getRandomValues(new Uint8Array(12));
+   const key=await deriveKey(password,salt);
+   const ctBuf=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc(plain));
+   const packet={v:1,alg:"AES-GCM",kdf:(window.argon2&&argon2.hash)?"argon2id":"pbkdf2-sha256",
+     params:(window.argon2&&argon2.hash)?{time:3,mem:65536,par:1}:{iter:100000},
+     salt:b64e(salt),iv:b64e(iv),ct:b64e(new Uint8Array(ctBuf))};
+   const json=JSON.stringify(packet);
+   $("cipher").value=json;$("qr").innerHTML="";
+   try{await navigator.clipboard.writeText(json);}catch{}
+ }catch(e){alert("Erreur chiffrement : "+e.message);}
+};
+$("clear").onclick=()=>{$("plain").value="";$("cipher").value="";$("qr").innerHTML="";};
+$("copy").onclick=async()=>{if(!$("cipher").value)return;try{await navigator.clipboard.writeText($("cipher").value);}catch{}};
+$("makeQR").onclick=()=>{const t=$("cipher").value.trim();if(!t)return; $("qr").innerHTML="";new QRCode($("qr"),{text:t,width:180,height:180});};
+$("decrypt").onclick=async()=>{
+ try{
+   const json=$("toDecrypt").value.trim();const password=$("password").value;
+   if(!json||!password)return;
+   const p=JSON.parse(json);const salt=b64d(p.salt),iv=b64d(p.iv),ct=b64d(p.ct);
+   const key=await deriveKey(password,salt);
+   const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct);
+   $("decrypted").value=dec(plain);
+ }catch(e){alert("Erreur déchiffrement : "+e.message);}
 };
 
-/* ---------- Effacer ---------- */
-$("clear").onclick = () => { $("plain").value=""; $("cipher").value=""; $("qr").innerHTML=""; };
-
-/* ---------- Copier ---------- */
-$("copy").onclick = async () => {
-  if(!$("cipher").value) return;
-  try{ await navigator.clipboard.writeText($("cipher").value); alert("Copié !"); }catch{}
-};
-
-/* ---------- QR ---------- */
-$("makeQR").onclick = () => {
-  const t = $("cipher").value.trim();
-  if(!t) return alert("Rien à encoder.");
-  if(!window.QRCode) return alert("Librairie QR non chargée.");
-  $("qr").innerHTML = "";
-  new QRCode($("qr"), {text:t, width:196, height:196});
-};
-
-/* ---------- Déchiffrer ---------- */
-$("decrypt").onclick = async () => {
-  try{
-    const json = $("toDecrypt").value.trim();
-    const password = $("password").value;
-    if(!json || !password) return alert("Colle un paquet + mot de passe.");
-
-    const p = JSON.parse(json);
-    const salt = b64d(p.salt), iv = b64d(p.iv), ct = b64d(p.ct);
-    const key  = await deriveKey(password, salt);
-    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
-    $("decrypted").value = dec(plain);
-  }catch(e){
-    alert("Erreur déchiffrement : " + e.message);
-  }
-};
-
-/* ---------- Badges init ---------- */
-function initBadges(){
-  refreshOnline();
-  // si le script argon2 est bien chargé, le setBadge sera mis à jour au 1er deriveKey()
-  setBadge($("badgeArgon"), (window.argon2 && argon2.hash) ? "Argon2id chargé" : "Repli PBKDF2",
-           (window.argon2 && argon2.hash) ? "ok" : "warn");
-}
-document.addEventListener("DOMContentLoaded", initBadges);
+document.addEventListener("DOMContentLoaded",()=>{
+ refreshOnline();
+ setBadge($("badgeArgon"),(window.argon2&&argon2.hash)?"Argon2id chargé":"Repli PBKDF2",
+   (window.argon2&&argon2.hash)?"ok":"warn");
+});
 </script>
 </body>
 </html>
