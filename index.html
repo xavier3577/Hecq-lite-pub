@@ -2,182 +2,464 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HECQ Secure — Argon2id + AES-GCM</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NoteShield — Argon2id + AES-GCM</title>
+<meta name="theme-color" content="#0d1117">
 
-<!-- Librairies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/argon2-browser/1.18.0/argon2.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<!-- Libs CDN -->
+<!-- Argon2 (bundled = WASM embarqué via CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/argon2-browser/1.18.0/argon2-bundled.min.js" integrity="sha512-g5X1V4rQt1c2s1M3nq0c8mFUyHk0n3LQag3lr1Ue7zE9Q1x0mXocQ5m8Ck02uI8M0x9+0m3t9YqXwW5X3rC8rQ==" crossorigin="anonymous"></script>
+<!-- QR code (génération) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-TdC0H9UqkI0rV3iQp0rHqf7k2m9s1PZ2nX9k3sm0n1dQkQ9dVqk3qfE5I5L0qf2r1oQ2i6wq1x5c4tQ8x7i4A==" crossorigin="anonymous"></script>
+<!-- QR code (scan caméra) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
 
 <style>
-  body{
-    margin:0;
-    font-family:"Segoe UI",Roboto,Arial,sans-serif;
-    background:radial-gradient(circle at top,#0d1117,#000);
-    color:#e8eef6;
+  :root{
+    --bg:#0d1117;--card:#121826;--card-2:#141c2b;--text:#c9d1d9;
+    --muted:#8b949e;--ok:#1f6feb;--warn:#d29922;--bad:#f85149;--good:#2ea043;
+    --accent1:#4f46e5;--accent2:#22d3ee;--accent3:#7c3aed;
+    --glow:0 0 24px rgba(34,211,238,.25);
+    --border:1px solid #1f2937; --radius:14px;
   }
-  .container{max-width:800px;margin:24px auto;padding:0 16px}
-  h1{text-align:center;margin-bottom:6px;
-     color:#00eaff;text-shadow:0 0 12px rgba(0,234,255,.6)}
-  .badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0}
-  .badge{padding:6px 12px;border-radius:20px;font-size:13px;
-         border:1px solid #333;background:#111}
-  .ok{border-color:#1ec87c;color:#9fffc4}
-  .warn{border-color:#c77c2e;color:#ffd9a6}
-  .card{background:#111a2b;border:1px solid #24314a;border-radius:12px;
-        padding:16px;margin:14px 0;box-shadow:0 0 18px rgba(0,234,255,.08)}
-  label{font-weight:600;color:#9feaff;margin-bottom:6px;display:block}
-  input,textarea{width:100%;padding:12px 14px;margin-bottom:8px;
-    background:#0c1220;color:#fff;border:1px solid #2a3b55;border-radius:10px;
-    font-size:15px;outline:none}
-  textarea{min-height:110px;resize:vertical}
-  .row{display:flex;gap:10px;align-items:center}
-  .btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;color:#fff;cursor:pointer;
-       background:linear-gradient(135deg,#00eaff,#9c4dff);
-       box-shadow:0 6px 16px rgba(0,234,255,.2);transition:.2s}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(156,77,255,.28)}
-  .ghost{background:#0c1220;border:1px solid #2a3b55}
-  .eye{min-width:44px;height:44px;display:grid;place-items:center;border:1px solid #2a3b55;
-       border-radius:10px;background:#0c1220;color:#9cc0ff;cursor:pointer}
-  .strength{height:10px;border-radius:6px;background:#222;margin-bottom:6px;overflow:hidden}
-  .strength span{display:block;height:100%;width:0;background:linear-gradient(90deg,red,orange,yellow,lime);
-                 transition:width .3s}
-  .qr{display:grid;place-items:center;margin-top:10px}
-  .disclaimer{margin:30px 0;padding:14px;border:1px solid #333;border-radius:8px;
-              background:#0c1220;color:#aaa;font-size:12px;line-height:1.5;text-align:center}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:#58a6ff;text-decoration:none}
+  .wrap{max-width:880px;margin:40px auto;padding:0 18px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .logo{
+    width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#0b1220,#0f1b2e 60%,#10233b);
+    box-shadow:inset 0 0 0 1px #1e2a3f,0 0 24px rgba(34,211,238,.12);
+    display:grid;place-items:center;
+  }
+  /* Logo SVG (bouclier NS) */
+  .logo svg{width:30px;height:30px;filter:drop-shadow(0 0 6px rgba(34,211,238,.45))}
+  h1{font-size:28px;line-height:1.2;margin:0}
+  .subtitle{color:var(--muted);margin-top:4px;font-size:14px}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .badge{
+    padding:6px 10px;border-radius:999px;background:#0f1524;border:var(--border);color:#bcd;
+    font-size:13px;display:inline-flex;align-items:center;gap:8px
+  }
+  .badge.ok{background:#0f1f15;color:#bfe7c8;border-color:#1e3b2a}
+  .badge.warn{background:#231b0e;color:#f3d38c;border-color:#3a2b16}
+
+  .card{background:var(--card);border:var(--border);border-radius:var(--radius);padding:18px;margin-top:18px;box-shadow:var(--glow)}
+  .card h2{font-size:18px;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>*{flex:1 1 240px}
+  input,textarea,select{
+    width:100%;background:var(--card-2);border:1px solid #22304a;border-radius:12px;color:var(--text);
+    padding:14px 15px;outline:none;transition:.15s;
+  }
+  input::placeholder,textarea::placeholder{color:#70809b}
+  input:focus,textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  textarea{min-height:140px;resize:vertical}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    padding:12px 18px;border-radius:12px;border:1px solid #243454;
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    color:#fff;font-weight:600;cursor:pointer;box-shadow:0 10px 22px rgba(79,70,229,.25);
+    transition:transform .05s ease,filter .2s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.gray{background:#1b2437;color:#d6deea;border-color:#2a3b5e}
+  .btn.red{background:#b91c1c;border-color:#7f1d1d}
+  .btn.outline{background:transparent;border:1px dashed #2a3b5e}
+  .eye{min-width:56px}
+  .meter{height:10px;border-radius:999px;background:#151c2b;border:1px solid #22304a;overflow:hidden}
+  .bar{height:100%;width:0;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);transition:width .2s ease}
+  .hint{color:var(--muted);font-size:13px;margin-top:8px}
+
+  .stack{display:flex;gap:10px;flex-wrap:wrap}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:780px){.grid2{grid-template-columns:1fr}}
+
+  .qr-wrap{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}
+  @media (max-width:700px){.qr-wrap{grid-template-columns:1fr}}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:#122138;border:1px solid #244368;color:#cfe8ff;padding:10px 14px;border-radius:10px;
+    opacity:0;pointer-events:none;transition:.25s
+  }
+  .toast.show{opacity:1;pointer-events:auto}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>HECQ Secure — Argon2id + AES-GCM</h1>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <!-- Bouclier "NS" (logo NoteShield) -->
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22d3ee"/>
+              <stop offset="1" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+          <path d="M32 6l18 6v12c0 12.5-7.4 23.8-18 28-10.6-4.2-18-15.5-18-28V12l18-6z" fill="url(#g)" stroke="#6ee7ff" stroke-width="1.5"/>
+          <path d="M20 40V22h6l8 10V22h6v18h-6l-8-10v10z" fill="#0d1117"/>
+        </svg>
+      </div>
+      <div>
+        <h1>NoteShield — Argon2id + AES-GCM</h1>
+        <div class="badges">
+          <span id="net-badge" class="badge">…</span>
+          <span id="kdf-badge" class="badge warn">KDF : …</span>
+        </div>
+        <div class="subtitle">Chiffrement local. Rien n’est envoyé côté serveur.</div>
+      </div>
+    </header>
 
-  <div class="badges">
-    <span id="badgeOnline" class="badge">État…</span>
-    <span id="badgeArgon" class="badge">Argon2…</span>
+    <!-- Mot de passe -->
+    <section class="card">
+      <h2>Mot de passe</h2>
+      <div class="row">
+        <input id="pwd" type="password" placeholder="Mot de passe robuste (12+ caractères)">
+        <button id="togglePwd" class="btn gray eye" title="Afficher/Masquer">👁</button>
+        <button id="genPwd" class="btn">Générer</button>
+      </div>
+      <div class="meter" style="margin-top:10px"><div id="meterBar" class="bar"></div></div>
+      <div id="meterHint" class="hint">Force : 0%</div>
+    </section>
+
+    <!-- Chiffrement -->
+    <section class="card">
+      <h2>Texte en clair</h2>
+      <textarea id="plain" placeholder="Écris ton message ici"></textarea>
+      <div class="actions">
+        <button id="encryptBtn" class="btn">Chiffrer</button>
+        <button id="clearPlain" class="btn gray">Effacer</button>
+      </div>
+    </section>
+
+    <!-- Résultat -->
+    <section class="card">
+      <h2>Résultat (paquet chiffré JSON Base64)</h2>
+      <textarea id="cipher" class="mono" placeholder="Le paquet chiffré apparaîtra ici"></textarea>
+      <div class="actions">
+        <button id="copyBtn" class="btn gray">Copier</button>
+        <button id="qrBtn" class="btn outline">Générer QR</button>
+      </div>
+      <div class="qr-wrap" style="margin-top:10px">
+        <div id="qrcode" style="width:220px;height:220px;"></div>
+        <div>
+          <div class="small muted">Pour lire un QR : ouvre l’appareil photo, ou utilise le scanner ci-dessous.</div>
+          <div id="reader" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Déchiffrement -->
+    <section class="card">
+      <h2>Déchiffrer</h2>
+      <div class="grid2">
+        <textarea id="cipherIn" class="mono" placeholder="Colle ici un paquet JSON chiffré (de NoteShield)"></textarea>
+        <textarea id="plainOut" placeholder="Le texte déchiffré apparaîtra ici" readonly></textarea>
+      </div>
+      <div class="actions">
+        <button id="decryptBtn" class="btn">Déchiffrer</button>
+      </div>
+      <div id="decHint" class="hint"></div>
+    </section>
+
+    <!-- Mode conversation (local) -->
+    <section class="card">
+      <h2>Mode conversation (local/offline)</h2>
+      <div class="grid2">
+        <textarea id="convMe" placeholder="Ton message (clair)"></textarea>
+        <textarea id="convOther" class="mono" placeholder="Message chiffré reçu (colle le JSON ici)"></textarea>
+      </div>
+      <div class="actions">
+        <button id="convSend" class="btn">Chiffrer →</button>
+        <button id="convRead" class="btn gray">← Déchiffrer</button>
+      </div>
+    </section>
+
+    <p class="hint small">Astuce : Après chiffrement, le paquet est copié automatiquement dans le presse-papiers.</p>
   </div>
 
-  <!-- Mot de passe -->
-  <div class="card">
-    <label>Mot de passe</label>
-    <div class="row">
-      <input id="password" type="password" placeholder="Mot de passe robuste (12+ caractères)">
-      <button id="toggleEye" class="eye">👁️</button>
-      <button id="genPass" class="btn">Générer</button>
-    </div>
-    <div class="strength"><span id="strengthFill"></span></div>
-  </div>
-
-  <!-- Texte clair -->
-  <div class="card">
-    <label>Texte en clair</label>
-    <textarea id="plain" placeholder="Écris ton message ici"></textarea>
-    <div class="row" style="justify-content:flex-end">
-      <button id="encrypt" class="btn">Chiffrer</button>
-      <button id="clear" class="btn ghost">Effacer</button>
-    </div>
-  </div>
-
-  <!-- Résultat -->
-  <div class="card">
-    <label>Résultat (paquet chiffré JSON)</label>
-    <textarea id="cipher" readonly></textarea>
-    <div class="row" style="justify-content:flex-end">
-      <button id="copy" class="btn ghost">Copier</button>
-      <button id="makeQR" class="btn">Générer QR</button>
-    </div>
-    <div id="qr" class="qr"></div>
-  </div>
-
-  <!-- Déchiffrement -->
-  <div class="card">
-    <label>Texte chiffré à déchiffrer</label>
-    <textarea id="toDecrypt" placeholder="Colle ici le paquet JSON"></textarea>
-    <div class="row" style="justify-content:flex-end">
-      <button id="decrypt" class="btn">Déchiffrer</button>
-    </div>
-    <textarea id="decrypted" readonly placeholder="Résultat du déchiffrement"></textarea>
-  </div>
-
-  <!-- Disclaimer -->
-  <div class="disclaimer">
-    ⚠️ <b>Disclaimer / Mentions légales :</b><br>
-    HECQ Secure est une application de chiffrement locale. Aucune donnée n’est envoyée ni stockée sur un serveur.<br>
-    L’auteur décline toute responsabilité en cas d’usage illégal ou contraire aux lois en vigueur.<br>
-    L’application est fournie <i>“en l’état”</i>, sans garantie. L’utilisateur est seul responsable du choix de son mot de passe et de l’usage qui est fait de l’application.
-  </div>
-</div>
+  <div id="toast" class="toast">Copié !</div>
 
 <script>
-const $=id=>document.getElementById(id);
-const enc=s=>new TextEncoder().encode(s);
-const dec=b=>new TextDecoder().decode(b);
-const b64e=u8=>btoa(String.fromCharCode(...u8));
-const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+/* ========= Helpers base64 / bytes ========= */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const fromB64 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+const randBytes = n => crypto.getRandomValues(new Uint8Array(n));
 
-function setBadge(el,text,cls){el.className="badge "+(cls||"");el.textContent=text;}
-function refreshOnline(){setBadge($("badgeOnline"),navigator.onLine?"En ligne":"Hors-ligne",navigator.onLine?"ok":"warn");}
-window.addEventListener("online",refreshOnline);window.addEventListener("offline",refreshOnline);
+/* ========= UI refs ========= */
+const pwd = document.getElementById('pwd');
+const togglePwd = document.getElementById('togglePwd');
+const genPwd = document.getElementById('genPwd');
+const meterBar = document.getElementById('meterBar');
+const meterHint = document.getElementById('meterHint');
+const netBadge = document.getElementById('net-badge');
+const kdfBadge = document.getElementById('kdf-badge');
 
-// œil
-$("toggleEye").onclick=()=>{let p=$("password");p.type=(p.type==="password")?"text":"password";};
-// générer
-$("genPass").onclick=()=>{const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
- let pass="";for(let i=0;i<21;i++)pass+=chars[Math.floor(Math.random()*chars.length)];
- $("password").value=pass;updateStrength(pass);}
-$("password").addEventListener("input",e=>updateStrength(e.target.value));
-function updateStrength(pw){$("strengthFill").style.width=Math.min(pw.length*5,100)+"%";}
+const plain = document.getElementById('plain');
+const encryptBtn = document.getElementById('encryptBtn');
+const clearPlain = document.getElementById('clearPlain');
 
-// deriveKey
-async function deriveKey(password,salt){
- if(window.argon2&&argon2.hash){
-   try{
-     const res=await argon2.hash({pass:password,salt,type:argon2.ArgonType.Argon2id,mem:65536,time:3,parallelism:1,hashLen:32});
-     setBadge($("badgeArgon"),"Argon2id chargé","ok");
-     return crypto.subtle.importKey("raw",res.hash,"AES-GCM",false,["encrypt","decrypt"]);
-   }catch(e){console.warn("Argon2 fail, fallback PBKDF2",e);}
- }
- setBadge($("badgeArgon"),"Repli PBKDF2","warn");
- const keyMaterial=await crypto.subtle.importKey("raw",enc(password),"PBKDF2",false,["deriveKey"]);
- return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"},
-   keyMaterial,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+const cipher = document.getElementById('cipher');
+const copyBtn = document.getElementById('copyBtn');
+const qrBtn = document.getElementById('qrBtn');
+const qrcodeBox = document.getElementById('qrcode');
+
+const cipherIn = document.getElementById('cipherIn');
+const decryptBtn = document.getElementById('decryptBtn');
+const plainOut = document.getElementById('plainOut');
+const decHint = document.getElementById('decHint');
+
+const convMe = document.getElementById('convMe');
+const convOther = document.getElementById('convOther');
+const convSend = document.getElementById('convSend');
+const convRead = document.getElementById('convRead');
+
+const toast = document.getElementById('toast');
+
+/* ========= Réseau / badges ========= */
+function updateNet(){
+  const online = navigator.onLine;
+  netBadge.className = 'badge ' + (online ? 'ok' : 'warn');
+  netBadge.textContent = online ? 'En ligne' : 'Hors ligne';
+}
+window.addEventListener('online',updateNet);
+window.addEventListener('offline',updateNet);
+updateNet();
+
+/* ========= Détection KDF ========= */
+let useArgon = false;
+(async () => {
+  try{
+    // simple test pour voir si argon2 est dispo
+    if (window.argon2 && argon2.hash) {
+      useArgon = true;
+      kdfBadge.className = 'badge ok';
+      kdfBadge.textContent = 'KDF : Argon2id';
+    } else {
+      throw new Error('argon2 indisponible');
+    }
+  }catch(e){
+    useArgon = false;
+    kdfBadge.className = 'badge warn';
+    kdfBadge.textContent = 'KDF : Repli PBKDF2';
+  }
+})();
+
+/* ========= Force du mot de passe (barre simple) ========= */
+function estimateStrength(p){
+  if(!p) return 0;
+  let score = 0;
+  const len = p.length;
+  const sets = [
+    /[a-z]/.test(p), /[A-Z]/.test(p),
+    /[0-9]/.test(p), /[^a-zA-Z0-9]/.test(p)
+  ].filter(Boolean).length;
+  score += Math.min(40, len*3);   // longueur
+  score += sets*15;               // diversité
+  score = Math.min(100, score);
+  return score;
+}
+function renderStrength(){
+  const s = estimateStrength(pwd.value);
+  meterBar.style.width = s+'%';
+  meterHint.textContent = 'Force : '+s+'%';
+}
+pwd.addEventListener('input', renderStrength);
+
+/* ========= Générateur 21 caractères ========= */
+function genPassword(){
+  const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{},.?:|~';
+  const bytes = randBytes(21);
+  let out = '';
+  for(const b of bytes){ out += alphabet[b % alphabet.length]; }
+  pwd.value = out;
+  renderStrength();
+}
+genPwd.addEventListener('click', genPassword);
+
+/* ========= Afficher/Masquer ========= */
+togglePwd.addEventListener('click',()=>{
+  pwd.type = (pwd.type==='password') ? 'text' : 'password';
+});
+
+/* ========= Dérivation de clé ========= */
+async function deriveKeyArgon(password, salt){
+  const params = { time:3, mem: 65536, par:1, hashLen:32, type: argon2.ArgonType.Argon2id };
+  const res = await argon2.hash({ pass: password, salt, ...params });
+  const keyRaw = res.hash; // Uint8Array
+  const key = await crypto.subtle.importKey('raw', keyRaw, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+  return { key, params: { time:3, mem:65536, par:1 } };
+}
+async function deriveKeyPBKDF2(password, salt){
+  const iter = 150000; // répli robuste
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'},
+    baseKey,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+  return { key, params: { iter } };
 }
 
-// encrypt
-$("encrypt").onclick=async()=>{
- try{
-   const plain=$("plain").value.trim();const password=$("password").value;
-   if(!plain||!password)return alert("Texte ou mot de passe manquant");
-   const salt=crypto.getRandomValues(new Uint8Array(16));
-   const iv=crypto.getRandomValues(new Uint8Array(12));
-   const key=await deriveKey(password,salt);
-   const ctBuf=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc(plain));
-   const packet={v:1,alg:"AES-GCM",kdf:(window.argon2&&argon2.hash)?"argon2id":"pbkdf2-sha256",
-     params:(window.argon2&&argon2.hash)?{time:3,mem:65536,par:1}:{iter:100000},
-     salt:b64e(salt),iv:b64e(iv),ct:b64e(new Uint8Array(ctBuf))};
-   const json=JSON.stringify(packet);
-   $("cipher").value=json;$("qr").innerHTML="";
-   try{await navigator.clipboard.writeText(json);}catch{}
- }catch(e){alert("Erreur chiffrement : "+e.message);}
-};
-$("clear").onclick=()=>{$("plain").value="";$("cipher").value="";$("qr").innerHTML="";};
-$("copy").onclick=async()=>{if(!$("cipher").value)return;try{await navigator.clipboard.writeText($("cipher").value);}catch{}};
-$("makeQR").onclick=()=>{const t=$("cipher").value.trim();if(!t)return; $("qr").innerHTML="";new QRCode($("qr"),{text:t,width:180,height:180});};
-$("decrypt").onclick=async()=>{
- try{
-   const json=$("toDecrypt").value.trim();const password=$("password").value;
-   if(!json||!password)return;
-   const p=JSON.parse(json);const salt=b64d(p.salt),iv=b64d(p.iv),ct=b64d(p.ct);
-   const key=await deriveKey(password,salt);
-   const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct);
-   $("decrypted").value=dec(plain);
- }catch(e){alert("Erreur déchiffrement : "+e.message);}
-};
+/* ========= Chiffrement ========= */
+async function encrypt(){
+  const message = plain.value.trim();
+  const password = pwd.value;
+  if(!message){ alert('Écris un message.'); return; }
+  if(!password || password.length<8){ alert('Choisis un mot de passe (8+).'); return; }
 
-document.addEventListener("DOMContentLoaded",()=>{
- refreshOnline();
- setBadge($("badgeArgon"),(window.argon2&&argon2.hash)?"Argon2id chargé":"Repli PBKDF2",
-   (window.argon2&&argon2.hash)?"ok":"warn");
+  const salt = randBytes(16);
+  const iv = randBytes(12);
+
+  // KDF
+  let key, kdf, kdfParams;
+  try{
+    if(useArgon){
+      const res = await deriveKeyArgon(password, salt);
+      key = res.key; kdf = 'argon2id'; kdfParams = res.params;
+    }else{
+      const res = await deriveKeyPBKDF2(password, salt);
+      key = res.key; kdf = 'pbkdf2-sha256'; kdfParams = res.params;
+    }
+  }catch(err){
+    // repli dur si argon échoue
+    const res = await deriveKeyPBKDF2(password, salt);
+    key = res.key; kdf = 'pbkdf2-sha256'; kdfParams = res.params;
+    useArgon = false;
+    kdfBadge.className = 'badge warn';
+    kdfBadge.textContent = 'KDF : Repli PBKDF2';
+  }
+
+  // AES-GCM
+  const data = enc.encode(message);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data);
+
+  const packet = {
+    v:1, alg:'AES-GCM', kdf, params:kdfParams,
+    salt: toB64(salt), iv: toB64(iv), ct: toB64(ct)
+  };
+  const json = JSON.stringify(packet);
+
+  cipher.value = json;
+  cipherIn.value = json; // prêt pour démo déchiffrement
+  autoCopy(json);
+  makeQR(json);
+}
+encryptBtn.addEventListener('click', encrypt);
+clearPlain.addEventListener('click', ()=>{ plain.value=''; });
+
+/* ========= Déchiffrement ========= */
+async function decrypt(){
+  const password = pwd.value;
+  const json = (cipherIn.value || cipher.value).trim();
+  if(!json){ alert('Colle un paquet chiffré.'); return; }
+  if(!password){ alert('Entre le mot de passe.'); return; }
+
+  let pkt;
+  try{ pkt = JSON.parse(json); }catch(e){ alert('Paquet invalide (JSON).'); return; }
+
+  const salt = fromB64(pkt.salt);
+  const iv   = fromB64(pkt.iv);
+  const ct   = fromB64(pkt.ct).buffer;
+
+  let key;
+  try{
+    if(pkt.kdf==='argon2id'){
+      const res = await deriveKeyArgon(password, salt); key = res.key;
+    }else if(pkt.kdf==='pbkdf2-sha256'){
+      const res = await deriveKeyPBKDF2(password, salt); key = res.key;
+    }else{
+      throw new Error('KDF inconnu');
+    }
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+    plainOut.value = dec.decode(pt);
+    decHint.textContent = '';
+  }catch(err){
+    plainOut.value = '';
+    decHint.textContent = 'Échec du déchiffrement (mauvais mot de passe ou paquet corrompu).';
+  }
+}
+decryptBtn.addEventListener('click', decrypt);
+
+/* ========= Copier auto & toast ========= */
+async function autoCopy(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    toast.textContent = 'Copié dans le presse-papiers';
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 1400);
+  }catch(e){
+    // silencieux (iOS peut bloquer hors geste utilisateur)
+  }
+}
+copyBtn.addEventListener('click', ()=>autoCopy(cipher.value||'') );
+
+/* ========= QR code (génération + scan) ========= */
+let qr;
+function makeQR(str){
+  qrcodeBox.innerHTML='';
+  qr = new QRCode(qrcodeBox,{
+    text: str || ' ',
+    width: 220, height: 220,
+    colorDark : "#e6f6ff", colorLight : "#0d1423",
+    correctLevel : QRCode.CorrectLevel.Q
+  });
+}
+qrBtn.addEventListener('click', ()=> makeQR(cipher.value||'') );
+makeQR('');
+
+/* Scanner QR (utilise html5-qrcode) */
+let qrScanner;
+function startScan(){
+  if(qrScanner) return;
+  const readerId = "reader";
+  if(!document.getElementById(readerId)) return;
+
+  qrScanner = new Html5Qrcode(readerId);
+  Html5Qrcode.getCameras().then(cams=>{
+    const camId = (cams && cams[0]) ? cams[0].id : null;
+    if(!camId) return;
+    qrScanner.start(
+      camId,
+      {fps:10, qrbox: {width: 220, height: 220}},
+      (decoded) => {
+        cipherIn.value = decoded;
+        toast.textContent = 'QR lu';
+        toast.classList.add('show');
+        setTimeout(()=>toast.classList.remove('show'), 1200);
+      },
+      (err)=>{}
+    );
+  });
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){ startScan(); }
 });
+setTimeout(startScan, 1200); // tente de démarrer après chargement
+
+/* ========= Mode conversation ========= */
+convSend.addEventListener('click', async ()=>{
+  plain.value = convMe.value;
+  await encrypt();
+  convOther.value = cipher.value;
+});
+convRead.addEventListener('click', async ()=>{
+  cipherIn.value = convOther.value;
+  await decrypt();
+  convMe.value = plainOut.value || convMe.value;
+});
+
+/* ========= Init force ========= */
+renderStrength();
 </script>
 </body>
 </html>
