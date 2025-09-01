@@ -1,64 +1,124 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>HECQ-code Lite</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-           margin: 20px; background:#0f1115; color:#eaeef5; line-height:1.5; }
-    h1 { margin:0 0 10px 0; font-size:22px; }
-    textarea { width:100%; min-height:140px; padding:12px; font-size:17px; border-radius:8px;
-               border:1px solid #333; background:#1b1f27; color:#eaeef5; }
-    .btn { padding:10px 14px; border-radius:8px; border:1px solid #333; background:#171b22; color:#fff; font-size:15px; margin:4px 0; }
-    .row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    .alphabet { display:grid; grid-template-columns:repeat(13,1fr); gap:6px; margin-top:10px; }
-    .cell { padding:6px 0; border:1px solid #333; border-radius:6px; text-align:center; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>HECQ Secure — Argon2id + AES-GCM (CDN)</title>
+<meta name="theme-color" content="#0e1418">
+<!-- Argon2id via CDN (charge aussi le .wasm automatiquement) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/argon2-browser/1.18.0/argon2.min.js"></script>
+<style>
+  :root{--bg:#0e1418;--panel:#101b20;--panel2:#0a1214;--ink:#e9f5f6;--muted:#9db2b8;--line:rgba(255,255,255,.10);--acc:#00e7a7;--warn:#ff6c6c;--ok:#70f3ba}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif}
+  header{padding:18px 14px;border-bottom:1px solid var(--line);background:#0f171b}
+  .container{max-width:980px;margin:0 auto}
+  h1{margin:0;font-size:22px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  main{padding:16px 12px 44px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.03) inset}
+  h2{margin:4px 0 10px;font-size:16px}
+  textarea{width:100%;min-height:180px;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0a1416;color:#e9f5f6;font-size:15.5px}
+  input[type=password]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0a1416;color:#e9f5f6}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+  .btn{appearance:none;border:1px solid var(--line);border-radius:10px;background:#0f181b;color:#f3fffd;padding:10px 14px;font-weight:700;cursor:pointer}
+  .btn-acc{border-color:rgba(0,231,167,.35);box-shadow:0 0 0 1px rgba(0,231,167,.18) inset}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0a1618;font-size:12.5px}
+  .muted{color:var(--muted);font-size:12.5px;margin-top:6px}
+  .hr{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:10px 0}
+  .ok{color:var(--ok)} .bad{color:var(--warn)}
+</style>
 </head>
 <body>
-  <h1>HECQ-code Lite (ROT13)</h1>
-  <p>Tape ton texte et il sera converti automatiquement (option : ROT5 pour chiffres).</p>
+<header>
+  <div class="container">
+    <h1>HECQ Secure — Argon2id + AES-GCM <span class="pill">CDN</span></h1>
+    <div class="sub">Argon2id chargé via <b>cdnjs</b>. Si indisponible, repli PBKDF2-SHA256.</div>
+  </div>
+</header>
 
-  <label for="input"><b>Texte</b></label>
-  <textarea id="input" placeholder="Écris ici…">BONJOUR</textarea>
+<main class="container">
+  <section class="panel">
+    <h2>Mot de passe</h2>
+    <div class="row">
+      <input id="pwd" type="password" placeholder="Mot de passe robuste (12+ caractères)">
+      <button class="btn btn-acc" id="gen">Générer</button>
+      <span id="strength" class="pill">force : —</span>
+      <span id="kdfStatus" class="pill">détection en cours…</span>
+    </div>
+  </section>
 
-  <div class="row">
-    <label><input type="checkbox" id="rot5"> ROT5 chiffres</label>
-    <button class="btn" id="swap">Échanger</button>
-    <button class="btn" id="clear">Effacer</button>
+  <div class="grid">
+    <section class="panel">
+      <h2>Texte en clair</h2>
+      <textarea id="plain">RENDEZ-VOUS DEMAIN 20H — ENTRÉE PORTE NORD</textarea>
+      <div class="row">
+        <button class="btn btn-acc" id="enc">Chiffrer (AES-GCM)</button>
+        <button class="btn" id="clearPlain">Effacer</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Texte chiffré (paquet JSON Base64)</h2>
+      <textarea id="cipher"></textarea>
+      <div class="row">
+        <button class="btn btn-acc" id="dec">Déchiffrer</button>
+        <button class="btn" id="copy">Copier</button>
+      </div>
+    </section>
   </div>
 
-  <label for="output"><b>Résultat</b></label>
-  <textarea id="output" readonly></textarea>
-
-  <div class="alphabet" id="alphabetGrid"></div>
+  <div class="hr"></div>
+  <p class="muted">Argon2id + AES-GCM en local. Le paquet contient : kdf/params/salt/iv/ct.</p>
+</main>
 
 <script>
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a)));
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function scorePassword(p){let s=0;if(!p)return 0;s+=Math.min(12,p.length)*6;if(/[a-z]/.test(p))s+=12;if(/[A-Z]/.test(p))s+=12;if(/\d/.test(p))s+=12;if(/[^A-Za-z0-9]/.test(p))s+=12;return Math.min(100,s)}
+async function derivePBKDF2(password,salt){
+  const mat=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:100000},mat,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function deriveArgon2id(password,salt){
+  if(!window.argon2) throw new Error('Argon2 non chargé');
+  const res=await window.argon2.hash({pass:password,salt:salt,type:window.argon2.ArgonType.Argon2id,time:3,mem:64*1024,parallelism:1,hashLen:32,raw:true});
+  return crypto.subtle.importKey('raw',res.hash,{name:'AES-GCM'},false,['encrypt','decrypt']);
+}
+async function encryptAESGCM(plaintext,key){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(plaintext));
+  return {iv,ct};
+}
+async function decryptAESGCM(cipher,key){
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:cipher.iv},key,cipher.ct);
+  return dec.decode(pt);
+}
 (function(){
-  function stripAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
-  function r13(c){const n=c.charCodeAt(0);
-    if(n>=65&&n<=90)return String.fromCharCode(((n-65+13)%26)+65);
-    if(n>=97&&n<=122)return String.fromCharCode(((n-97+13)%26)+97);
-    return c;}
-  function r5(c){const n=c.charCodeAt(0);if(n>=48&&n<=57)return String.fromCharCode(((n-48+5)%10)+48);return c;}
-  function convert(t,useR5){t=stripAccents(t).toUpperCase();let o='';for(let i=0;i<t.length;i++){const rr=r13(t[i]);o+=useR5?r5(rr):rr;}return o;}
-
-  const $i=document.getElementById('input'), $o=document.getElementById('output'), $r5=document.getElementById('rot5');
-  function update(){ $o.value=convert($i.value,$r5.checked); }
-  $i.addEventListener('input',update);$r5.addEventListener('change',update);
-  document.getElementById('clear').addEventListener('click',()=>{$i.value='';$o.value='';$i.focus();});
-  document.getElementById('swap').addEventListener('click',()=>{const t=$i.value;$i.value=$o.value;$o.value=t;update();$i.focus();});
-
-  function renderAlphabet(){
-    const g=document.getElementById('alphabetGrid');
-    const top='ABCDEFGHIJKLM'.split('');const bot='NOPQRSTUVWXYZ'.split('');
-    for(let i=0;i<13;i++){const d=document.createElement('div');d.className='cell';d.innerHTML=`${top[i]} ↔ ${bot[i]}`;g.appendChild(d);}
+  const $pwd=document.getElementById('pwd'),$plain=document.getElementById('plain'),$cipher=document.getElementById('cipher');
+  const $strength=document.getElementById('strength'),$kdfStatus=document.getElementById('kdfStatus');
+  function updateStrength(){const s=scorePassword($pwd.value);$strength.textContent='force : '+s+'%';$strength.className='pill '+(s>=70?'ok':(s>=40?'':'bad'))}
+  function detectArgon2(){if(window.argon2){$kdfStatus.textContent='Argon2id actif';$kdfStatus.className='pill ok'}else{$kdfStatus.textContent='Argon2id non chargé — repli PBKDF2';$kdfStatus.className='pill bad'}}
+  updateStrength();detectArgon2();window.addEventListener('load',detectArgon2);$pwd.addEventListener('input',updateStrength);
+  document.getElementById('gen').onclick=()=>{const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*-_+=?';let out='';for(let i=0;i<20;i++)out+=chars[Math.floor(Math.random()*chars.length)];$pwd.value=out;updateStrength()}
+  document.getElementById('enc').onclick=async()=>{if(!$pwd.value){alert('Entre un mot de passe.');return}
+    try{const salt=crypto.getRandomValues(new Uint8Array(16));let key;if(window.argon2){key=await deriveArgon2id($pwd.value,salt)}else{key=await derivePBKDF2($pwd.value,salt)}
+      const {iv,ct}=await encryptAESGCM($plain.value,key);
+      $cipher.value=JSON.stringify({v:1,alg:'AES-GCM',kdf:window.argon2?'argon2id':'pbkdf2-sha256',params:window.argon2?{t:3,m:65536,p:1,len:32}:{iter:100000},salt:b64(salt),iv:b64(iv),ct:b64(ct)});
+    }catch(e){alert('Erreur chiffrement: '+e.message)}
   }
-  renderAlphabet();
-  // Run once on load
-  update();
-})(); 
+  document.getElementById('dec').onclick=async()=>{if(!$pwd.value){alert('Entre le mot de passe.');return}
+    try{const pkg=JSON.parse($cipher.value),salt=ub64(pkg.salt),iv=ub64(pkg.iv),ct=ub64(pkg.ct);let key;
+      if(pkg.kdf==='argon2id' && window.argon2){key=await deriveArgon2id($pwd.value,salt)}else{key=await derivePBKDF2($pwd.value,salt)}
+      $plain.value=await decryptAESGCM({iv,ct},key);
+    }catch(e){alert('Erreur déchiffrement: '+e.message)}
+  }
+  document.getElementById('copy').onclick=()=>{try{navigator.clipboard.writeText($cipher.value)}catch(e){}}
+  document.getElementById('clearPlain').onclick=()=>{$plain.value='';$plain.focus()}
+})();
 </script>
 </body>
 </html>
