@@ -1,239 +1,237 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>HECQ Secure — Plus v2 (Offline forcé corrigé)</title>
-<meta name="theme-color" content="#0e1418">
-<style>
-  :root{
-    --bg:#0e1418; --panel:#101b20; --panel2:#0a1214; --ink:#e9f5f6; --muted:#9db2b8;
-    --line:rgba(255,255,255,.10); --acc:#00e7a7; --warn:#ff6c6c; --ok:#70f3ba; --info:#79c7ff;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-  header{padding:18px 14px;border-bottom:1px solid var(--line);background:#0f171b}
-  .container{max-width:1100px;margin:0 auto}
-  h1{margin:0;font-size:22px;letter-spacing:.2px}
-  .sub{color:var(--muted);font-size:13px;margin-top:6px}
-  main{padding:16px 12px 44px}
-  .grid{display:grid;grid-template-columns:1fr;gap:14px}
-  @media(min-width:1024px){ .grid{grid-template-columns:1fr 1.1fr} }
-  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
-         border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.03) inset}
-  h2{margin:2px 0 10px;font-size:16px}
-  textarea{width:100%;min-height:140px;padding:12px;border-radius:10px;border:1px solid var(--line);
-           background:#0a1416;color:#e9f5f6;font-size:15px;line-height:1.5}
-  input[type="password"],input[type="text"]{
-    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0a1416;color:#e9f5f6
-  }
-  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
-  .btn{appearance:none;border:1px solid var(--line);border-radius:10px;background:#0f181b;color:#f3fffd;
-       padding:9px 14px;font-weight:700;cursor:pointer}
-  .btn-acc{border-color:rgba(0,231,167,.35);box-shadow:0 0 0 1px rgba(0,231,167,.18) inset}
-  .pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0a1618;font-size:12.5px}
-  .muted{color:var(--muted);font-size:12.5px;margin-top:6px}
-  .ok{color:var(--ok)} .bad{color:var(--warn)} .info{color:var(--info)}
-  .meter{height:10px;background:#0b1417;border:1px solid var(--line);border-radius:999px;overflow:hidden; width:240px}
-  .meter > div{height:100%;width:0%;background:linear-gradient(90deg,#ff6c6c,#ffd36c,#70f3ba);transition:width .25s}
-  .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .qrbox{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  canvas.qr{background:#0a1416;border:1px solid var(--line);border-radius:10px}
-  .chat{background:#0a1416;border:1px solid var(--line);border-radius:12px;padding:10px;max-height:430px;overflow:auto}
-  .msg{display:flex;margin:8px 0}
-  .msg.me{justify-content:flex-end}
-  .bubble{max-width:72%;padding:10px 12px;border-radius:14px;border:1px solid var(--line)}
-  .me .bubble{background:#11231f;border-color:rgba(0,231,167,.35)}
-  .peer .bubble{background:#101a24;border-color:rgba(121,199,255,.35)}
-  .meta{font-size:11px;color:#9fb3b8;margin-top:4px}
-  .chatInput{display:flex;gap:8px;margin-top:8px}
-  .chatInput input{flex:1}
-  .tag{display:inline-block;padding:6px 10px;border-radius:999px;border:1px dashed var(--line);background:#0a1618;font-size:12px}
-  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-</style>
-<!-- Argon2 via CDN -->
-<script src="https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HECQ Secure — Argon2id + AES-GCM</title>
+
+  <!-- Styles améliorés -->
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #0f0f1a, #000);
+      color: #eaeaea;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      color: #80dfff;
+      text-shadow: 0 0 8px #00f0ff;
+      margin-bottom: 20px;
+    }
+    .section {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(20, 20, 35, 0.9);
+      border: 1px solid #333;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.1);
+    }
+    label {
+      font-weight: bold;
+      color: #a0e0ff;
+      display: block;
+      margin-bottom: 6px;
+    }
+    textarea, input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #12141f;
+      color: #fff;
+      font-size: 15px;
+      box-shadow: inset 0 0 6px rgba(0, 255, 255, 0.2);
+    }
+    button {
+      margin: 8px 6px 0 0;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00bfff, #8a2be2);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+    }
+    button:hover {
+      background: linear-gradient(135deg, #1ec8ff, #a03dff);
+      box-shadow: 0 0 16px rgba(0, 255, 255, 0.5);
+      transform: scale(1.05);
+    }
+    .qr {
+      margin-top: 15px;
+      text-align: center;
+    }
+    /* Progression force mot de passe */
+    .strength-bar {
+      height: 10px;
+      border-radius: 6px;
+      margin-top: 6px;
+      background: #222;
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 6px;
+      background: linear-gradient(90deg, red, orange, yellow, lime);
+      box-shadow: 0 0 8px rgba(0,255,0,0.6);
+    }
+  </style>
 </head>
 <body>
-<header>
-  <div class="container">
-    <h1>HECQ Secure — Plus v2</h1>
-    <div class="sub">Argon2id + AES-GCM · QR Code · Conversation · Compteur visuel · Hors-ligne forcé</div>
-  </div>
-</header>
+  <h1>HECQ Secure — Argon2id + AES-GCM</h1>
+  <p style="text-align:center"><small>Argon2id via <b>cdnjs</b> — Repli PBKDF2 si indisponible</small></p>
 
-<main class="container">
-  <div class="panel">
-    <h2>Paramètres</h2>
-    <div class="bar">
-      <div class="flex">
-        <label>Mot de passe</label>
-        <input id="pwd" type="password" placeholder="Mot de passe robuste (12+ caractères)">
-        <button class="btn btn-acc" id="gen">Générer (21)</button>
-      </div>
-      <div class="flex">
-        <div class="meter"><div id="meterFill"></div></div>
-        <span id="strength" class="pill">force : —</span>
-        <span id="kdfStatus" class="pill">Argon2id : détection…</span>
-        <span id="offlineStatus" class="pill info">Réseau autorisé</span>
-      </div>
-      <div class="flex">
-        <label><input type="checkbox" id="autoCopy" checked> Copier auto</label>
-        <label><input type="checkbox" id="forceOffline"> Mode hors-ligne forcé</label>
-      </div>
+  <!-- Mot de passe -->
+  <div class="section">
+    <label>Mot de passe</label>
+    <input id="password" type="text" placeholder="Mot de passe robuste (12+ caractères)">
+    <button id="genPass">Générer</button>
+    <div class="strength-bar"><div id="strengthFill" class="strength-fill"></div></div>
+  </div>
+
+  <!-- Texte clair -->
+  <div class="section">
+    <label>Texte en clair</label>
+    <textarea id="plain" rows="3" placeholder="Écris ton message ici"></textarea>
+    <button id="encrypt">Chiffrer</button>
+    <button id="clear">Effacer</button>
+  </div>
+
+  <!-- Résultat -->
+  <div class="section">
+    <label>Résultat (paquet chiffré)</label>
+    <textarea id="cipher" rows="4" readonly></textarea>
+    <div>
+      <button id="copy">Copier</button>
+      <button id="makeQR">Générer QR</button>
     </div>
+    <div id="qr" class="qr"></div>
   </div>
 
-  <div class="grid">
-    <section class="panel">
-      <h2>Texte</h2>
-      <textarea id="plain" placeholder="Tape ton message…">RENDEZ-VOUS DEMAIN 20H — ENTRÉE PORTE NORD</textarea>
-      <div class="row">
-        <button class="btn btn-acc" id="enc">Chiffrer</button>
-        <button class="btn" id="clear">Effacer</button>
-        <span class="tag">Paquet JSON Base64 généré ci-dessous</span>
-      </div>
-
-      <h2 style="margin-top:12px">Résultat (paquet chiffré)</h2>
-      <textarea id="cipher"></textarea>
-
-      <div class="row qrbox">
-        <button class="btn" id="copy">Copier</button>
-        <button class="btn" id="makeQR">Générer QR</button>
-        <canvas id="qr" class="qr" width="192" height="192"></canvas>
-      </div>
-
-      <div class="row">
-        <button class="btn" id="dec">Déchiffrer</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>Mode conversation (local/offline)</h2>
-      <div class="chat" id="chat"></div>
-      <div class="chatInput">
-        <input id="chatInput" type="text" placeholder="Écris un message…">
-        <button class="btn btn-acc" id="send">Envoyer</button>
-        <button class="btn" id="addIncoming">Ajouter reçu (JSON)</button>
-      </div>
-    </section>
+  <!-- Déchiffrement -->
+  <div class="section">
+    <label>Texte chiffré à déchiffrer</label>
+    <textarea id="toDecrypt" rows="4" placeholder="Colle ici un paquet JSON Base64"></textarea>
+    <button id="decrypt">Déchiffrer</button>
+    <textarea id="decrypted" rows="3" readonly></textarea>
   </div>
-</main>
 
-<script>
-const enc = new TextEncoder(), dec = new TextDecoder();
-function scorePassword(p){
-  let s=0; if(!p) return 0;
-  s += Math.min(12, p.length)*6;
-  if(/[a-z]/.test(p)) s+=12; if(/[A-Z]/.test(p)) s+=12; if(/\\d/.test(p)) s+=12; if(/[^A-Za-z0-9]/.test(p)) s+=12;
-  return Math.min(100,s);
-}
-function updateStrength(){
-  const pwd = document.getElementById('pwd').value;
-  const score = scorePassword(pwd);
-  document.getElementById('strength').textContent = 'force : '+score+'%';
-  document.getElementById('meterFill').style.width = score+'%';
-}
-document.getElementById('pwd').addEventListener('input', updateStrength);
-document.getElementById('gen').addEventListener('click', ()=>{
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*-_+=?';
-  let out=''; for(let i=0;i<21;i++) out+=chars[Math.floor(Math.random()*chars.length)];
-  document.getElementById('pwd').value=out; updateStrength();
-});
+  <!-- Librairies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/argon2-browser/1.18.0/argon2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-// Hors-ligne forcé
-(function(){
-  const offlineStatus = document.getElementById('offlineStatus');
-  const state = {enabled:false,fetch:window.fetch,XHR:window.XMLHttpRequest,WS:window.WebSocket,ES:window.EventSource,sendBeacon:navigator.sendBeacon};
-  function NetBlockedError(method){ this.name='NetworkBlockedError'; this.message='Offline forcé: '+method+' bloqué.'; }
-  NetBlockedError.prototype = Error.prototype;
-  function enableOffline(){
-    if(state.enabled) return; state.enabled=true;
-    window.fetch = ()=>Promise.reject(new NetBlockedError('fetch'));
-    window.XMLHttpRequest = function(){ throw new NetBlockedError('XMLHttpRequest'); };
-    window.WebSocket = function(){ throw new NetBlockedError('WebSocket'); };
-    window.EventSource = function(){ throw new NetBlockedError('EventSource'); };
-    navigator.sendBeacon = ()=>false;
-    offlineStatus.textContent='Réseau BLOQUÉ'; offlineStatus.className='pill bad';
-  }
-  function disableOffline(){
-    if(!state.enabled) return; state.enabled=false;
-    window.fetch = state.fetch; window.XMLHttpRequest = state.XHR;
-    window.WebSocket = state.WS; window.EventSource = state.ES;
-    navigator.sendBeacon = state.sendBeacon;
-    offlineStatus.textContent='Réseau autorisé'; offlineStatus.className='pill info';
-  }
-  document.getElementById('forceOffline').addEventListener('change', e=>{ if(e.target.checked) enableOffline(); else disableOffline(); });
-})();
+  <!-- Script -->
+  <script>
+    // Génération de mot de passe
+    document.getElementById("genPass").addEventListener("click", () => {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+      let pass = "";
+      for (let i = 0; i < 21; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+      document.getElementById("password").value = pass;
+      updateStrength(pass);
+    });
 
-// Argon2 detect
-(function(){
-  const kdfStatus=document.getElementById('kdfStatus');
-  function detect(){
-    if(window.argon2){ kdfStatus.textContent='Argon2id actif'; kdfStatus.className='pill ok'; }
-    else{ kdfStatus.textContent='Argon2id non chargé — PBKDF2'; kdfStatus.className='pill bad'; }
-  }
-  window.addEventListener('load',detect); detect();
-})();
+    // Vérification force mot de passe
+    document.getElementById("password").addEventListener("input", (e) => {
+      updateStrength(e.target.value);
+    });
+    function updateStrength(pass) {
+      const bar = document.getElementById("strengthFill");
+      let score = Math.min(pass.length * 5, 100);
+      bar.style.width = score + "%";
+    }
 
-function toB64(u8){return btoa(String.fromCharCode(...u8));}
-function fromB64(b64){return Uint8Array.from(atob(b64),c=>c.charCodeAt(0));}
+    // === Chiffrement ===
+    document.getElementById("encrypt").addEventListener("click", async () => {
+      const plain = document.getElementById("plain").value;
+      const password = document.getElementById("password").value;
+      if (!plain || !password) return alert("Texte ou mot de passe manquant");
 
-async function doEncrypt(){
-  const pwd=document.getElementById('pwd').value.trim(), text=document.getElementById('plain').value;
-  if(!pwd){alert('Mot de passe requis');return;}
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  let key,kdf,params;
-  if(window.argon2){
-    kdf='argon2id';
-    const res=await window.argon2.hash({pass:pwd,salt,type:window.argon2.ArgonType.Argon2id,time:3,mem:64*1024,parallelism:1,hashLen:32,raw:true});
-    key=await crypto.subtle.importKey('raw',res.hash,'AES-GCM',false,['encrypt','decrypt']);
-    params={time:3,mem:65536,par:1};
-  }else{
-    kdf='pbkdf2-sha256';
-    const mat=await crypto.subtle.importKey('raw',enc.encode(pwd),'PBKDF2',false,['deriveKey']);
-    key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:100000},mat,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-    params={iter:100000};
-  }
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));
-  const packet={v:1,alg:'AES-GCM',kdf,params,salt:toB64(salt),iv:toB64(iv),ct:toB64(new Uint8Array(ct))};
-  const json=JSON.stringify(packet);
-  document.getElementById('cipher').value=json;
-  if(document.getElementById('autoCopy').checked){try{await navigator.clipboard.writeText(json);}catch(e){}}
-}
-async function doDecrypt(){
-  const pwd=document.getElementById('pwd').value.trim(),txt=document.getElementById('cipher').value.trim();
-  if(!pwd||!txt){alert('Infos manquantes');return;}
-  let p;try{p=JSON.parse(txt);}catch(e){alert('JSON invalide');return;}
-  const salt=fromB64(p.salt),iv=fromB64(p.iv),ct=fromB64(p.ct); let key;
-  if(p.kdf==='argon2id'&&window.argon2){
-    const res=await window.argon2.hash({pass:pwd,salt,type:window.argon2.ArgonType.Argon2id,time:p.params?.time||3,mem:p.params?.mem||64*1024,parallelism:p.params?.par||1,hashLen:32,raw:true});
-    key=await crypto.subtle.importKey('raw',res.hash,'AES-GCM',false,['decrypt']);
-  }else{
-    const mat=await crypto.subtle.importKey('raw',enc.encode(pwd),'PBKDF2',false,['deriveKey']);
-    key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:p.params?.iter||100000},mat,{name:'AES-GCM',length:256},false,['decrypt']);
-  }
-  try{const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);document.getElementById('plain').value=dec.decode(pt);}catch(e){alert('Échec déchiffrement');}
-}
-document.getElementById('enc').addEventListener('click',doEncrypt);
-document.getElementById('dec').addEventListener('click',doDecrypt);
-document.getElementById('clear').addEventListener('click',()=>{document.getElementById('plain').value='';document.getElementById('cipher').value='';});
-document.getElementById('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(document.getElementById('cipher').value);}catch(e){}});
-// QR (utilise qrcodejs depuis CDN)
-document.getElementById('makeQR').addEventListener('click',()=>{const t=document.getElementById('cipher').value;if(!t)return;new QRCode(document.getElementById('qr'),t);});
-// Conversation
-function addMsg(text,who){
-  const chat=document.getElementById('chat');
-  const wrap=document.createElement('div');wrap.className='msg '+who;
-  const bub=document.createElement('div');bub.className='bubble';bub.textContent=text;
-  const meta=document.createElement('div');meta.className='meta';meta.textContent=(who==='me'?'→ Toi':'← Reçu')+' • '+new Date().toLocaleTimeString();
-  wrap.appendChild(bub);wrap.appendChild(meta);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;
-}
-document.getElementById('send').addEventListener('click',async()=>{const msg=document.getElementById('chatInput').value.trim();if(!msg)return;document.getElementById('plain').value=msg;await doEncrypt();addMsg(msg,'me');document.getElementById('chatInput').value='';});
-document.getElementById('addIncoming').addEventListener('click',async()=>{const pack=prompt('Colle le paquet JSON reçu :');if(!pack)return;document.getElementById('cipher').value=pack;await doDecrypt();addMsg(document.getElementById('plain').value,'peer');});
-</script>
-<!-- QRCode lib -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+      // KDF Argon2id
+      let salt = crypto.getRandomValues(new Uint8Array(16));
+      let keyBytes = await argon2.hash({ pass: password, salt, type: argon2.ArgonType.Argon2id });
+      let key = await crypto.subtle.importKey("raw", keyBytes.hash, "AES-GCM", false, ["encrypt", "decrypt"]);
+
+      // AES-GCM
+      let iv = crypto.getRandomValues(new Uint8Array(12));
+      let encoded = new TextEncoder().encode(plain);
+      let ctBuffer = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+      let ct = btoa(String.fromCharCode(...new Uint8Array(ctBuffer)));
+
+      // Paquet JSON
+      let packet = {
+        v: 1,
+        alg: "AES-GCM",
+        kdf: "argon2id",
+        params: { time: 3, mem: 65536, par: 1 },
+        salt: btoa(String.fromCharCode(...salt)),
+        iv: btoa(String.fromCharCode(...iv)),
+        ct
+      };
+      let json = JSON.stringify(packet);
+      document.getElementById("cipher").value = json;
+
+      // Auto-copie
+      navigator.clipboard.writeText(json).catch(()=>{});
+    });
+
+    // Effacer
+    document.getElementById("clear").addEventListener("click", () => {
+      document.getElementById("plain").value = "";
+      document.getElementById("cipher").value = "";
+      document.getElementById("qr").innerHTML = "";
+    });
+
+    // Copier
+    document.getElementById("copy").addEventListener("click", () => {
+      const t = document.getElementById("cipher").value;
+      if (!t) return;
+      navigator.clipboard.writeText(t);
+      alert("Copié !");
+    });
+
+    // QR code
+    document.getElementById("makeQR").addEventListener("click", () => {
+      const t = document.getElementById("cipher").value.trim();
+      if (!t) return alert("Rien à encoder");
+      if (!window.QRCode) return alert("Lib QRCode non chargée !");
+      const box = document.getElementById("qr");
+      box.innerHTML = "";
+      new QRCode(box, { text: t, width: 192, height: 192 });
+    });
+
+    // Déchiffrement
+    document.getElementById("decrypt").addEventListener("click", async () => {
+      try {
+        const json = document.getElementById("toDecrypt").value.trim();
+        if (!json) return;
+        const packet = JSON.parse(json);
+        const password = document.getElementById("password").value;
+        if (!password) return alert("Mot de passe manquant");
+
+        const salt = Uint8Array.from(atob(packet.salt), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(packet.iv), c => c.charCodeAt(0));
+        const ct = Uint8Array.from(atob(packet.ct), c => c.charCodeAt(0));
+
+        let keyBytes = await argon2.hash({ pass: password, salt, type: argon2.ArgonType.Argon2id });
+        let key = await crypto.subtle.importKey("raw", keyBytes.hash, "AES-GCM", false, ["decrypt"]);
+        let plainBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+        let plain = new TextDecoder().decode(plainBuffer);
+
+        document.getElementById("decrypted").value = plain;
+      } catch (e) {
+        alert("Erreur déchiffrement : " + e.message);
+      }
+    });
+  </script>
 </body>
 </html>
