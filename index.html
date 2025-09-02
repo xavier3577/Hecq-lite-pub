@@ -3,26 +3,23 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content" />
-<title>NoteShield — Optimisé (Argon2id + AES-GCM)</title>
+<title>NoteShield — Argon2id + AES-GCM (Chiffrer / Décoder / Conversation)</title>
 
-<!-- Perf: préconnexions (librairies éventuelles) -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" />
-<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
-
 <meta name="theme-color" content="#0d1117" />
+
 <style>
   :root{
     --bg:#0d1117;--panel:#161b22;--line:#2a3441;--text:#e6eef9;--muted:#9fb1c7;
-    --b1:#4f46e5;--b2:#22d3ee;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;
+    --b1:#4f46e5;--b2:#22d3ee;--ok:#22c55e;--warn:#f59e0b;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:radial-gradient(1100px 600px at 70% -10%,#12213b 0%,#0d1117 60%);color:var(--text);
        font:16px/1.45 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .wrap{max-width:980px;margin:26px auto;padding:0 14px}
-  header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  header{display:flex;gap:12px;align-items:center;margin-bottom:10px}
   .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--b2),var(--b1));
         display:grid;place-items:center;box-shadow:0 0 24px rgba(79,70,229,.25)}
   .logo svg{width:26px;height:26px;fill:#fff}
@@ -31,6 +28,9 @@
   .badge{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#0f1625;color:#cfe7ff;font-size:13px}
   .ok{background:#0f1f15;border-color:#1e3b2a;color:#c2f8d8}
   .warn{background:#2a210e;border-color:#6b4a1a;color:#ffe3ad}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 14px}
+  .tab{border:1px solid var(--line);background:#0f1625;color:#cfe7ff;border-radius:999px;padding:8px 12px;cursor:pointer}
+  .tab.active{background:linear-gradient(135deg,var(--b1),var(--b2));color:#06121e}
   .grid{display:grid;gap:18px}
   @media(min-width:920px){.grid{grid-template-columns:1fr 1fr}}
   .card{background:linear-gradient(180deg,#141b2a,#0f1522);border:1px solid var(--line);border-radius:14px;padding:16px}
@@ -54,6 +54,7 @@
   .them{margin-right:auto;background:#2a3348;color:#d8e6ff}
   .chat-input{display:flex;gap:8px;margin-top:10px}
   .small{font-size:12px;color:var(--muted)}
+  .hidden{display:none}
 </style>
 </head>
 <body>
@@ -63,7 +64,7 @@
       <svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 5-3.6 9.3-7 11-3.4-1.7-7-6-7-11V5l7-3zM9.3 8.2h1.9l2.5 3.7V8.2h1.9v7.6h-1.9l-2.5-3.7v3.7H9.3V8.2z"/></svg>
     </div>
     <div>
-      <h1>NoteShield — Optimisé</h1>
+      <h1>NoteShield — Chiffrer • Décoder • Converser</h1>
       <div class="badges">
         <span id="netBadge" class="badge">…</span>
         <span id="kdfBadge" class="badge warn">KDF : init…</span>
@@ -71,20 +72,30 @@
     </div>
   </header>
 
-  <div class="grid">
-    <!-- Colonne 1 -->
-    <section class="card">
-      <h2>Mot de passe</h2>
-      <label for="pw">Mot de passe robuste (12+ caractères)</label>
-      <div class="row">
-        <input id="pw" type="password" autocomplete="new-password" placeholder="Mot de passe" />
-        <button id="eye" class="btn ghost" aria-label="Afficher/Masquer">👁️</button>
-        <button id="gen" class="btn">Générer</button>
-      </div>
-      <div class="meter" style="margin:10px 0 2px"><span id="mbar"></span></div>
-      <div id="mtxt" class="small">force : —</div>
+  <div class="tabs">
+    <button class="tab active" data-tab="encode">Chiffrer</button>
+    <button class="tab" data-tab="decode">Décoder</button>
+    <button class="tab" data-tab="chat">Conversation</button>
+  </div>
 
-      <h2 style="margin-top:16px">Texte en clair</h2>
+  <!-- Mot de passe (commun) -->
+  <section class="card">
+    <h2>Mot de passe (clé partagée)</h2>
+    <label for="pw">Mot de passe robuste (12+ caractères)</label>
+    <div class="row">
+      <input id="pw" type="password" autocomplete="new-password" placeholder="Mot de passe" />
+      <button id="eye" class="btn ghost" aria-label="Afficher/Masquer">👁️</button>
+      <button id="gen" class="btn">Générer</button>
+    </div>
+    <div class="meter" style="margin:10px 0 2px"><span id="mbar"></span></div>
+    <div id="mtxt" class="small">force : —</div>
+  </section>
+
+  <div class="grid">
+    <!-- Onglet 1 : Chiffrer -->
+    <section id="pane-encode" class="card">
+      <h2>Chiffrer un message</h2>
+      <label for="plain">Texte en clair</label>
       <textarea id="plain" placeholder="Écris ton message ici"></textarea>
       <div class="row" style="margin-top:10px">
         <button id="enc" class="btn">Chiffrer</button>
@@ -94,15 +105,28 @@
       <h2 style="margin-top:16px">Résultat (paquet chiffré JSON)</h2>
       <textarea id="cipher" class="mono" placeholder='{"v":1,"alg":"AES-GCM",...}'></textarea>
       <div class="row" style="margin-top:10px">
-        <button id="dec" class="btn ghost">Déchiffrer</button>
         <button id="copy" class="btn copy">Copier</button>
         <button id="qrBtn" class="btn">QR</button>
       </div>
       <div id="qr" class="qr" aria-live="polite">QR du paquet</div>
     </section>
 
-    <!-- Colonne 2 -->
-    <section class="card">
+    <!-- Onglet 2 : Décoder -->
+    <section id="pane-decode" class="card hidden">
+      <h2>Décoder un message chiffré</h2>
+      <label for="cipherIn">Message chiffré (JSON ou Base64(JSON))</label>
+      <textarea id="cipherIn" class="mono" placeholder='Colle ici le paquet reçu — ex. {"v":1,...} ou eyJ2IjoxLCJhbGciOi...'></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="dec" class="btn">Déchiffrer</button>
+        <button id="clrDec" class="btn ghost">Effacer</button>
+      </div>
+
+      <h2 style="margin-top:16px">Texte en clair</h2>
+      <textarea id="plainOut" placeholder="" readonly></textarea>
+    </section>
+
+    <!-- Onglet 3 : Conversation -->
+    <section id="pane-chat" class="card hidden">
       <h2>Conversation (local / offline)</h2>
       <div id="chat" class="chat" aria-live="polite"></div>
       <div class="chat-input">
@@ -110,8 +134,8 @@
         <button id="chatSend" class="btn">Envoyer</button>
       </div>
       <div style="margin-top:12px">
-        <label for="inbound" class="small">Message chiffré reçu (colle ici le JSON)</label>
-        <textarea id="inbound" class="mono" placeholder='{"v":1,"alg":"AES-GCM","kdf":"argon2id",...}'></textarea>
+        <label for="inbound" class="small">Message chiffré reçu (colle ici le JSON ou Base64(JSON))</label>
+        <textarea id="inbound" class="mono" placeholder='{"v":1,"alg":"AES-GCM","kdf":"argon2id",...} ou eyJ2IjoxLCJhbGciOi...'></textarea>
         <div class="row" style="margin-top:10px">
           <button id="chatRecv" class="btn ghost">↤ Déchiffrer & afficher</button>
           <button id="chatCopy" class="btn copy">Copier dernier envoi</button>
@@ -123,7 +147,7 @@
 </div>
 
 <script>
-/* ========= Perf: chargeurs paresseux ========= */
+/* ========= Lazy loaders ========= */
 const loaders = {};
 function loadScript(src){
   if (loaders[src]) return loaders[src];
@@ -135,17 +159,31 @@ function loadScript(src){
   return loaders[src];
 }
 const ensureArgon = ()=> loadScript("https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js");
-const ensureQR    = ()=> loadScript("https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js");
+const ensureQR    = ()=> loadScript("https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js");
 const ensureZX    = ()=> loadScript("https://cdn.jsdelivr.net/npm/zxcvbn@4.4.2/dist/zxcvbn.js");
 
 /* ========= UI utils ========= */
 const $=s=>document.querySelector(s);
-const netBadge=$("#netBadge"), kdfBadge=$("#kdfBadge");
 function setBadge(el,text,cls){ el.textContent=text; el.className="badge"+(cls?(" "+cls):""); }
+const netBadge=$("#netBadge"), kdfBadge=$("#kdfBadge");
 function updateOnline(){ setBadge(netBadge, navigator.onLine?"En ligne":"Hors ligne", navigator.onLine?"ok":"warn"); }
 addEventListener("online",updateOnline); addEventListener("offline",updateOnline); updateOnline();
 
-/* ========= Strength (lazy) ========= */
+/* ========= Onglets ========= */
+const tabs = document.querySelectorAll(".tab");
+const panes = {
+  encode: $("#pane-encode"),
+  decode: $("#pane-decode"),
+  chat:   $("#pane-chat"),
+};
+tabs.forEach(t=>t.addEventListener("click", ()=>{
+  tabs.forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const k=t.dataset.tab;
+  Object.entries(panes).forEach(([id,el])=> el.classList.toggle("hidden", id!==k));
+}));
+
+/* ========= Password strength ========= */
 const pw=$("#pw"), mbar=$("#mbar"), mtxt=$("#mtxt");
 async function assess(){
   if (!window.zxcvbn) { try{ await ensureZX(); }catch{} }
@@ -153,12 +191,11 @@ async function assess(){
     const r=zxcvbn(pw.value||""); const pct=Math.min(100, Math.round((r.guesses_log10/10)*100));
     mbar.style.width=pct+"%"; mtxt.textContent="force : "+pct+"%";
   } else {
-    const s=pw.value.length; const pct=Math.max(0, Math.min(100, s*5)); mbar.style.width=pct+"%"; mtxt.textContent="force : "+pct+"%";
+    const s=pw.value.length; const pct=Math.max(0, Math.min(100, s*5));
+    mbar.style.width=pct+"%"; mtxt.textContent="force : "+pct+"%";
   }
 }
-pw.addEventListener("input", assess);
-
-/* ========= Générateur / œil ========= */
+pw.addEventListener("input",assess);
 $("#gen").onclick=()=>{ pw.value = genPass(21); assess(); };
 $("#eye").onclick=()=>{ pw.type = pw.type==="password"?"text":"password"; };
 function genPass(n=21){
@@ -167,26 +204,26 @@ function genPass(n=21){
   return Array.from(a,v=>chars[v%chars.length]).join("");
 }
 
-/* ========= Bases ========= */
+/* ========= B64 utils ========= */
 const enc = new TextEncoder(), dec = new TextDecoder();
 const b64 = u8 => btoa(String.fromCharCode(...u8));
 const ub64 = s  => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
 
-/* ========= KDF optimisé (Argon2id ⇄ PBKDF2) ========= */
-let KDF = "auto"; // "argon2id" | "pbkdf2" | "auto"
+/* ========= KDF (Argon2id ⇄ PBKDF2) ========= */
 function argonAvailable(){ return !!(window.argon2 && argon2.hash); }
 
 async function deriveKey(password, saltU8, preferArgon){
-  // essaie Argon2 si demandé ou si auto + dispos
-  if ((preferArgon || KDF==="auto") && argonAvailable()){
+  if ((preferArgon || true) && argonAvailable()){
     setBadge(kdfBadge,"KDF : Argon2id","ok");
-    const res = await argon2.hash({ pass: password, salt: saltU8, type: argon2.ArgonType.Argon2id, time:3, mem:65536, parallelism:1, hashLen:32 });
+    const res = await argon2.hash({
+      pass: password, salt: saltU8,
+      type: argon2.ArgonType.Argon2id, time:3, mem:65536, parallelism:1, hashLen:32, version:0x13
+    });
     const raw = new Uint8Array(res.hash);
     const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt","decrypt"]);
-    raw.fill(0); // hygiène
+    raw.fill(0);
     return { key, meta:{kdf:"argon2id", params:{time:3,mem:65536,par:1}} };
   }
-  // PBKDF2 fallback
   setBadge(kdfBadge,"KDF : PBKDF2","warn");
   const mat = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
   const key = await crypto.subtle.deriveKey(
@@ -199,73 +236,96 @@ async function deriveKey(password, saltU8, preferArgon){
 /* ========= Crypto ========= */
 async function encryptPacket(plain, password){
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  // si Argon pas encore chargé, on tente en tâche de fond (sans bloquer)
   if (!argonAvailable() && navigator.onLine) { ensureArgon().catch(()=>{}); }
-  const preferArgon = true;
-  const {key, meta} = await deriveKey(password, salt, preferArgon);
+  const {key, meta} = await deriveKey(password, salt, true);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc.encode(plain));
-  const pkt = { v:1, alg:"AES-GCM", kdf:meta.kdf, params:meta.params, salt:b64(salt), iv:b64(iv), ct:b64(new Uint8Array(ct)) };
-  // hygiène
+  const pkt = { v:1, alg:"AES-GCM", kdf:meta.kdf, params:meta.params,
+                salt:b64(salt), iv:b64(iv), ct:b64(new Uint8Array(ct)) };
   salt.fill(0); iv.fill(0);
   return pkt;
 }
 
-async function decryptPacket(pkt, password){
-  const salt = ub64(pkt.salt), iv = ub64(pkt.iv), ct = ub64(pkt.ct);
-  // si le paquet exige Argon2 et qu'il n'est pas chargé → on le charge
-  if (pkt.kdf==="argon2id" && !argonAvailable()){
-    try{ await ensureArgon(); }catch(e){ throw new Error("Argon2id requis mais indisponible."); }
+/*  ACCEPT JSON OR BASE64(JSON)  */
+async function decryptPacket(pktOrStr, password){
+  let pkt = pktOrStr;
+  if (typeof pktOrStr === "string") {
+    const s = pktOrStr.trim();
+    if (!s) throw new Error("Paquet vide");
+    if (s[0] === "{") {
+      pkt = JSON.parse(s);
+    } else {
+      try {
+        const u8 = Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+        pkt = JSON.parse(new TextDecoder().decode(u8));
+      } catch {
+        throw new Error("Format inconnu (ni JSON, ni Base64(JSON))");
+      }
+    }
   }
-  const preferArgon = (pkt.kdf==="argon2id");
-  const {key} = await deriveKey(password, salt, preferArgon);
+  const salt = ub64(pkt.salt), iv = ub64(pkt.iv), ct = ub64(pkt.ct);
+  if (pkt.kdf==="argon2id" && !argonAvailable()){
+    try{ await ensureArgon(); }catch{ throw new Error("Argon2id requis mais indisponible."); }
+  }
+  const {key} = await deriveKey(password, salt, pkt.kdf==="argon2id");
   const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
-  // hygiène
   salt.fill(0); iv.fill(0); ct.fill(0);
   return dec.decode(pt);
 }
 
-/* ========= QR (lazy) ========= */
+/* ========= QR (Qrious) ========= */
 async function makeQR(text){
-  if (!window.QRCode) { try{ await ensureQR(); }catch{ return; } }
-  const box=$("#qr"); box.innerHTML="";
-  try{
-    QRCode.toCanvas(document.createElement("canvas"), text, {width:240, errorCorrectionLevel:"Q"}, (err, canvas)=>{
-      if(err){ box.textContent="QR indisponible"; return; }
-      box.appendChild(canvas);
+  const box=$("#qr");
+  box.innerHTML = "";
+  if (!text) { box.textContent = "QR du paquet"; return; }
+  try {
+    if (!window.QRious) { await ensureQR(); }
+    const canvas = document.createElement("canvas");
+    box.appendChild(canvas);
+    new QRious({
+      element: canvas, value: text, size: 240,
+      background: "#0b1324", foreground: "#e6f6ff", level: "Q"
     });
-  }catch{ box.textContent="QR indisponible"; }
+  } catch (e) {
+    box.textContent = "QR indisponible";
+  }
 }
 
-/* ========= Actions UI ========= */
+/* ========= Actions : Chiffrer ========= */
 const cipher=$("#cipher"), plain=$("#plain");
 $("#enc").onclick = async ()=>{
   const p = pw.value||""; if(!p){ alert("Mot de passe requis"); return; }
-  const msg = plain.value||"";
   try{
-    const pkt = await encryptPacket(msg, p);
+    const pkt = await encryptPacket(plain.value||"", p);
     const json = JSON.stringify(pkt);
     cipher.value = json;
     try{ await navigator.clipboard.writeText(json); }catch{}
     makeQR(json);
   }catch(e){ alert("Erreur chiffrement : "+(e.message||e)); }
 };
+$("#clr").onclick = ()=>{ plain.value=""; cipher.value=""; $("#qr").textContent="QR du paquet"; };
+$("#copy").onclick = async ()=>{ try{ await navigator.clipboard.writeText(cipher.value||""); }catch{} };
+$("#qrBtn").onclick = ()=> makeQR(cipher.value.trim()||"");
+
+/* ========= Actions : Décoder ========= */
+const cipherIn=$("#cipherIn"), plainOut=$("#plainOut");
 $("#dec").onclick = async ()=>{
   const p = pw.value||""; if(!p){ alert("Mot de passe requis"); return; }
   try{
-    const pkt = JSON.parse(cipher.value||"{}");
-    const txt = await decryptPacket(pkt, p);
-    plain.value = txt;
+    const txt = await decryptPacket(cipherIn.value, p);
+    plainOut.value = txt;
   }catch(e){ alert("Erreur déchiffrement : "+(e.message||e)); }
 };
-$("#copy").onclick = async ()=>{ try{ await navigator.clipboard.writeText(cipher.value||""); }catch{} };
-$("#qrBtn").onclick = ()=> makeQR(cipher.value.trim()||"");
-$("#clr").onclick = ()=>{ plain.value=""; cipher.value=""; $("#qr").textContent="QR du paquet"; };
+$("#clrDec").onclick = ()=>{ cipherIn.value=""; plainOut.value=""; };
 
-/* ========= Chat local (historique en clair, localStorage) ========= */
+/* ========= Chat local ========= */
 const chat=$("#chat"), chatIn=$("#chatIn");
 let hist = JSON.parse(localStorage.getItem("ns_chat")||"[]");
-function renderChat(){ chat.innerHTML=""; for(const m of hist){ const b=document.createElement("div"); b.className="bub "+(m.me?"me":"them"); b.textContent=m.text; chat.appendChild(b);} chat.scrollTop=chat.scrollHeight; }
+function renderChat(){
+  chat.innerHTML="";
+  for(const m of hist){ const b=document.createElement("div"); b.className="bub "+(m.me?"me":"them"); b.textContent=m.text; chat.appendChild(b); }
+  chat.scrollTop=chat.scrollHeight;
+}
 renderChat();
 let lastSent="";
 $("#chatSend").onclick = async ()=>{
@@ -276,27 +336,27 @@ $("#chatSend").onclick = async ()=>{
     const json = JSON.stringify(pkt);
     lastSent = json;
     try{ await navigator.clipboard.writeText(json); }catch{}
-    hist.push({me:true,text:txt}); localStorage.setItem("ns_chat", JSON.stringify(hist)); chatIn.value=""; renderChat();
+    hist.push({me:true,text:txt}); localStorage.setItem("ns_chat", JSON.stringify(hist));
+    chatIn.value=""; renderChat();
   }catch(e){ alert("Erreur : "+(e.message||e)); }
 };
 $("#chatRecv").onclick = async ()=>{
   const p = pw.value||""; if(!p) return alert("Mot de passe requis");
   const raw = $("#inbound").value.trim(); if(!raw) return;
   try{
-    const pkt = JSON.parse(raw);
-    const txt = await decryptPacket(pkt, p);
-    hist.push({me:false,text:txt}); localStorage.setItem("ns_chat", JSON.stringify(hist)); $("#inbound").value=""; renderChat();
+    const txt = await decryptPacket(raw, p);
+    hist.push({me:false,text:txt}); localStorage.setItem("ns_chat", JSON.stringify(hist));
+    $("#inbound").value=""; renderChat();
   }catch(e){ alert("Paquet invalide : "+(e.message||e)); }
 };
 $("#chatCopy").onclick = async ()=>{ if(!lastSent) return; try{ await navigator.clipboard.writeText(lastSent); }catch{} };
 
 /* ========= Init ========= */
-updateOnline();
-// charge zxcvbn & QR quand le navigateur est idle (perf)
+setBadge(kdfBadge,"KDF : " + (navigator.onLine?"tentative Argon2id…":"PBKDF2"), navigator.onLine?"":"warn");
 if ("requestIdleCallback" in window){
-  requestIdleCallback(()=>{ ensureZX().catch(()=>{}); ensureQR().catch(()=>{}); });
+  requestIdleCallback(()=>{ ensureZX().catch(()=>{}); ensureQR().catch(()=>{}); ensureArgon().catch(()=>{}); });
 }else{
-  setTimeout(()=>{ ensureZX().catch(()=>{}); ensureQR().catch(()=>{}); },1200);
+  setTimeout(()=>{ ensureZX().catch(()=>{}); ensureQR().catch(()=>{}); ensureArgon().catch(()=>{}); },1000);
 }
 </script>
 </body>
