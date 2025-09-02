@@ -1,302 +1,258 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NoteShield — Argon2id + AES-GCM</title>
-
-<!-- Libs CDN (avec fallback natif) -->
-<script src="https://cdn.jsdelivr.net/npm/argon2-browser/dist/argon2-bundled.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/zxcvbn@4.4.2/dist/zxcvbn.js" defer></script>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NoteShield — Mode Messenger P2P (proto)</title>
 <style>
   :root{
-    --bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#c9d1d9;--muted:#8b949e;
-    --brand1:#00c6ff;--brand2:#007bff;--ok:#2ea043;--warn:#d29922;--bad:#f85149;
-    --glow:0 0 24px rgba(0,198,255,.15);
+    --bg:#0c111b; --card:#131a27; --accent1:#5dd6ff; --accent2:#8a5dff; --ok:#1fbf75; --warn:#ffb020; --text:#e5ecff; --muted:#98a2b3;
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;background:radial-gradient(1200px 600px at 60% -10%,rgba(0,198,255,.08),transparent),
-    radial-gradient(1000px 500px at -10% 10%,rgba(0,123,255,.08),transparent),var(--bg);
-    color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;line-height:1.45;
-  }
-  .wrapper{max-width:980px;margin:28px auto;padding:0 16px}
-  header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-  .logo{
-    width:42px;height:42px;border-radius:9px;background:linear-gradient(135deg,var(--brand2),var(--brand1));
-    box-shadow:var(--glow);display:grid;place-items:center;flex:0 0 auto;
-  }
-  .logo svg{width:26px;height:26px;fill:#fff}
-  h1{margin:0;font-size:28px;letter-spacing:.3px;text-shadow:0 0 18px rgba(0,198,255,.3)}
-  .badges{display:flex;gap:8px;flex-wrap:wrap}
-  .badge{
-    padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(22,27,34,.6);
-    font-size:13px;color:var(--muted)
-  }
-  .badge.ok{color:#c8f6c8;border-color:#2e7d32;background:rgba(46,125,50,.15)}
-  .badge.warn{color:#ffeab6;border-color:#a88410;background:rgba(168,132,16,.12)}
-  .grid{display:grid;gap:18px}
-  @media(min-width:920px){.grid{grid-template-columns:1fr 1fr}}
-  .card{
-    border:1px solid var(--line);background:linear-gradient(180deg,rgba(22,27,34,.95),rgba(22,27,34,.9));
-    border-radius:14px;box-shadow:var(--glow);padding:18px
-  }
-  .card h2{margin:0 0 10px;font-size:18px}
-  label{font-size:13px;color:var(--muted)}
-  .row{display:flex;gap:10px;align-items:center;margin-top:8px}
-  input,textarea{
-    width:100%;color:var(--text);background:#0f141a;border:1px solid var(--line);
-    border-radius:10px;padding:12px 12px;outline:none;transition:.15s;
-  }
-  input:focus,textarea:focus{border-color:#1f6feb;box-shadow:0 0 0 3px rgba(31,111,235,.15)}
-  textarea{min-height:140px;resize:vertical}
-  .btn{
-    padding:12px 16px;border:0;border-radius:12px;cursor:pointer;color:#fff;
-    background:linear-gradient(45deg,var(--brand2),var(--brand1));box-shadow:0 8px 24px rgba(0,123,255,.25);
-  }
-  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
-  .btn.copy{background:#21262d}
-  .meter{height:8px;border-radius:6px;background:#1b222b;border:1px solid var(--line);overflow:hidden}
-  .meter > span{display:block;height:100%;width:0;background:linear-gradient(90deg,#f04438,#f59e0b,#22c55e)}
-  .qr{display:grid;grid-template-columns:1fr;place-items:center;border:1px dashed var(--line);
-      border-radius:12px;padding:10px;min-height:160px;background:#0f141a}
-  .toast{
-    position:fixed;inset:auto 16px 16px auto;background:#111827;border:1px solid #2f3845;color:#c9d1d9;
-    padding:10px 12px;border-radius:12px;opacity:0;transform:translateY(6px);transition:.2s;pointer-events:none
-  }
-  .toast.show{opacity:1;transform:none}
-  /* Chat */
-  .chat{display:flex;flex-direction:column;gap:10px;height:380px;border:1px solid var(--line);
-        border-radius:12px;background:#0f141a;padding:12px;overflow:auto}
-  .bubble{max-width:70%;padding:10px 12px;border-radius:16px;word-wrap:break-word}
-  .me{margin-left:auto;background:#238636;color:#fff}
-  .them{margin-right:auto;background:#30363d;color:#c9d1d9}
-  .chat-input{display:flex;gap:8px;margin-top:10px}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #182235 0%, #0c111b 60%) fixed;color:var(--text);font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto}
+  h1{font-weight:800;text-align:center;margin:20px 12px 12px;text-shadow:0 0 24px #2fd0ff66,0 0 6px #2fd0ff66}
+  .container{max-width:980px;margin:0 auto;padding:16px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:880px){.grid-2{grid-template-columns:1fr 1fr}}
+  .card{background:linear-gradient(180deg,#141b2a,#0f1522);border:1px solid #1b2440;border-radius:14px;box-shadow:0 10px 30px #0008;padding:16px}
+  label{display:block;font-weight:600;margin:6px 0 6px}
+  input[type=password],input[type=text],textarea{width:100%;border:1px solid #223058;background:#0d1422;color:var(--text);border-radius:12px;padding:12px 14px;outline:none}
+  textarea{min-height:120px;resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{appearance:none;border:0;border-radius:12px;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;font-weight:700;padding:10px 16px;cursor:pointer;box-shadow:0 6px 20px #0008}
+  .btn.sec{background:#1a2740}
+  .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid #243356;background:#0e1625;color:var(--muted);font-size:13px}
+  .pill.ok{color:#caffe3;border-color:#234f3a;background:#10261a}
+  .pill.warn{color:#ffe7bf;border-color:#4d3c13;background:#1c160a}
+  .status{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0 16px}
+  .chat{height:280px;overflow:auto;border:1px solid #223058;border-radius:12px;background:#0b1322;padding:10px}
+  .msg{max-width:75%;padding:10px 12px;margin:8px 0;border-radius:12px;box-shadow:0 6px 18px #0006}
+  .me{background:#13315a;margin-left:auto}
+  .peer{background:#1e2436}
   .small{font-size:12px;color:var(--muted)}
+  .sep{height:1px;background:linear-gradient(90deg,transparent,#2a3d66,transparent);margin:12px 0}
 </style>
 </head>
 <body>
-  <div class="wrapper">
-    <header>
-      <div class="logo" aria-hidden="true">
-        <!-- petit logo bouclier inline (pas d'image externe) -->
-        <svg viewBox="0 0 24 24" role="img" aria-label="NoteShield">
-          <path d="M12 2l7 3v6c0 5-3.6 9.3-7 11-3.4-1.7-7-6-7-11V5l7-3zM9.3 8.2h1.9l2.5 3.7V8.2h1.9v7.6h-1.9l-2.5-3.7v3.7H9.3V8.2z"/>
-        </svg>
+  <h1>NoteShield — Mode Messenger P2P (prototype)</h1>
+
+  <div class="container grid">
+    <div class="status">
+      <span id="netBadge" class="pill ok">En ligne</span>
+      <span id="webrtcBadge" class="pill">WebRTC : inactif</span>
+      <span id="cryptoBadge" class="pill warn">Chiffrement : prêt (PBKDF2)</span>
+    </div>
+
+    <div class="card">
+      <label for="pwd">Mot de passe (partagé hors bande)</label>
+      <div class="row">
+        <input id="pwd" type="password" placeholder="Mot de passe robuste (12+ caractères)" style="flex:1" />
+        <button class="btn sec" id="togglePwd">👁️</button>
       </div>
-      <div>
-        <h1>NoteShield — Argon2id + AES-GCM</h1>
-        <div class="badges">
-          <span id="netBadge" class="badge">…</span>
-          <span id="kdfBadge" class="badge warn">Repli PBKDF2</span>
-        </div>
-      </div>
-    </header>
+      <div class="small">La clé de chiffrement est dérivée de ce mot de passe (AES-GCM 256 bits). Change-la régulièrement.</div>
+      <div class="sep"></div>
 
-    <div class="grid">
-      <!-- Colonne 1 : Entrée / sortie -->
-      <section class="card">
-        <h2>Mot de passe</h2>
-        <label for="pw">Mot de passe robuste (12+ caractères)</label>
-        <div class="row">
-          <input id="pw" type="password" autocomplete="new-password" inputmode="text" placeholder="Mot de passe robuste">
-          <button id="togglePw" class="btn ghost" aria-label="Afficher/masquer">👁️</button>
-          <button id="gen" class="btn">Générer</button>
-        </div>
-        <div class="meter" style="margin:10px 0 2px"><span id="meterBar"></span></div>
-        <div id="meterTxt" class="small">force : 0%</div>
-
-        <h2 style="margin-top:18px">Texte en clair</h2>
-        <textarea id="plain" placeholder="Écris ton message ici"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button id="encBtn" class="btn">Chiffrer</button>
-          <button id="clr1" class="btn ghost">Effacer</button>
-        </div>
-
-        <h2 style="margin-top:18px">Résultat (paquet chiffré JSON Base64)</h2>
-        <textarea id="cipher" placeholder="Le paquet JSON chiffré apparaîtra ici"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button id="decBtn" class="btn ghost">Déchiffrer</button>
-          <button id="copyBtn" class="btn copy">Copier</button>
-          <button id="qrBtn" class="btn">Générer QR</button>
-        </div>
-        <div id="qr" class="qr" aria-live="polite">QR du paquet chiffré</div>
-      </section>
-
-      <!-- Colonne 2 : Mode conversation -->
-      <section class="card">
-        <h2>Mode conversation (local/offline)</h2>
-        <div id="chat" class="chat" aria-live="polite"></div>
-        <div class="chat-input">
-          <input id="chatInput" placeholder="Message à envoyer (sera chiffré)">
-          <button id="chatSend" class="btn">Envoyer</button>
-        </div>
-
-        <div style="margin-top:14px">
-          <label for="inbound" class="small">Message chiffré reçu (colle le JSON ici)</label>
-          <textarea id="inbound" placeholder='{"v":1,"alg":"AES-GCM",...}'></textarea>
-          <div class="row" style="margin-top:10px">
-            <button id="chatRecv" class="btn ghost">↤ Déchiffrer & afficher</button>
-            <button id="chatCopy" class="btn copy">Copier dernier envoi</button>
+      <div class="grid grid-2">
+        <div>
+          <label>1) Créer l’offre (initiateur)</label>
+          <div class="row">
+            <button class="btn" id="btnCreateOffer">Créer l’offre</button>
+            <button class="btn sec" id="btnCopyOffer">Copier</button>
           </div>
-          <div class="small" style="margin-top:8px">Astuce : après chiffrement, le paquet est copié automatiquement dans le presse-papiers.</div>
+          <textarea id="offer" placeholder="L’offre SDP apparaîtra ici"></textarea>
         </div>
-      </section>
+        <div>
+          <label>2) Coller la réponse (de ton contact)</label>
+          <div class="row">
+            <button class="btn" id="btnApplyAnswer">Appliquer la réponse</button>
+            <button class="btn sec" id="btnClearSig">Effacer</button>
+          </div>
+          <textarea id="answer" placeholder="Colle ici la réponse SDP reçue"></textarea>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Alternative : tu es le répondeur</label>
+          <div class="row">
+            <button class="btn" id="btnAcceptOffer">Accepter l’offre reçue</button>
+            <button class="btn sec" id="btnCopyAnswer">Copier la réponse</button>
+          </div>
+          <textarea id="incomingOffer" placeholder="Colle ici l’offre SDP reçue"></textarea>
+          <textarea id="generatedAnswer" placeholder="Ta réponse SDP apparaîtra ici"></textarea>
+        </div>
+        <div>
+          <label>État de la connexion</label>
+          <div id="state" class="small">En attente…</div>
+          <div class="small">Astuce : l’échange d’offre/réponse peut aussi se faire en QR dans une prochaine version.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Conversation chiffrée</label>
+      <div id="chat" class="chat"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="msg" type="text" placeholder="Écrire un message…" style="flex:1" />
+        <button class="btn" id="send">Envoyer</button>
+      </div>
+      <div class="small">Les messages voyagent dans un canal de données WebRTC, **chiffrés** avec AES-GCM via la clé dérivée du mot de passe.</div>
     </div>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite">Copié dans le presse-papiers</div>
-
 <script>
-/* ---------- Helpers UI ---------- */
-const $ = s => document.querySelector(s);
-const toast = (msg)=>{ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); };
-const netBadge=$("#netBadge"), kdfBadge=$("#kdfBadge");
-function updateOnline(){ netBadge.textContent = navigator.onLine ? "En ligne" : "Hors ligne"; netBadge.className = "badge " + (navigator.onLine?"ok":"warn");}
-addEventListener("online",updateOnline); addEventListener("offline",updateOnline); updateOnline();
-
-/* ---------- Password tools ---------- */
-const pw=$("#pw"), meterBar=$("#meterBar"), meterTxt=$("#meterTxt");
-$("#togglePw").onclick=()=>{ pw.type = pw.type==="password"?"text":"password"; };
-$("#gen").onclick=()=>{ pw.value = genPass(21); assess(); };
-function genPass(n=18){
-  const chars="abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789!%$#&*+-_=:@?";
-  const a=new Uint32Array(n); crypto.getRandomValues(a);
-  return Array.from(a,v=>chars[v%chars.length]).join("");
+/* ==== Utilitaires UI ==== */
+const $ = sel => document.querySelector(sel);
+const chat = $('#chat');
+function addMsg(text, who='peer'){
+  const b = document.createElement('div');
+  b.className = `msg ${who==='me'?'me':'peer'}`;
+  b.textContent = text;
+  chat.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
 }
-function assess(){
-  if (typeof zxcvbn!=="function"){ meterBar.style.width="60%"; meterTxt.textContent="force : —"; return; }
-  const r=zxcvbn(pw.value||"");
-  const pct=Math.min(100, Math.round((r.guesses_log10/10)*100));
-  meterBar.style.width=pct+"%"; meterTxt.textContent="force : "+pct+"%";
+function setBadge(el, text, cls){
+  el.textContent = text;
+  el.className = 'pill ' + (cls||'');
 }
-pw.addEventListener("input",assess); assess();
+setBadge($('#netBadge'), navigator.onLine?'En ligne':'Hors ligne', navigator.onLine?'ok':'warn');
+window.addEventListener('online', ()=>setBadge($('#netBadge'),'En ligne','ok'));
+window.addEventListener('offline',()=>setBadge($('#netBadge'),'Hors ligne','warn'));
 
-/* ---------- Base64 helpers ---------- */
-const enc = new TextEncoder(), dec = new TextDecoder();
-const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
-const b64u = u8 => btoa(String.fromCharCode(...u8));
-const unb64 = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+/* ==== Dérivation clé (PBKDF2 pour proto) ==== */
+let cryptoKey = null;
+async function deriveKey(password){
+  const enc = new TextEncoder();
+  const salt = enc.encode('NoteShield-P2P-v1'); // constant salt (proto). Pour +fort: salt partagé/rotatif.
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', hash:'SHA-256', salt, iterations:100000},
+    baseKey,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+async function ensureKey(){
+  const pwd = $('#pwd').value || '';
+  if(!pwd || pwd.length<4){ throw new Error('Mot de passe vide'); }
+  cryptoKey = await deriveKey(pwd);
+  setBadge($('#cryptoBadge'),'Chiffrement : actif (clé prête)','ok');
+}
+$('#togglePwd').addEventListener('click',()=>{
+  const p=$('#pwd'); p.type = p.type==='password' ? 'text' : 'password';
+});
 
-/* ---------- KDF (Argon2id -> PBKDF2 fallback) ---------- */
-let kdfMode = "pbkdf2"; // sera mis à argon2id si lib dispo
-const AOK = ()=> typeof argon2!=="undefined" && argon2 && argon2.hash;
+/* ==== WebRTC & canal de données ==== */
+let pc, dc;
 
-async function deriveKey(password, salt){
-  if (AOK()){
-    kdfMode="argon2id"; kdfBadge.textContent="Argon2id chargé"; kdfBadge.className="badge ok";
-    const res = await argon2.hash({
-      pass: password, salt: salt,
-      type: argon2.ArgonType.Argon2id,
-      time: 3, mem: 65536, parallelism: 1, hashLen: 32, version: 0x13
-    });
-    return new Uint8Array(res.hash);
-  } else {
-    kdfMode="pbkdf2"; kdfBadge.textContent="Repli PBKDF2"; kdfBadge.className="badge warn";
-    const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-    const bits = await crypto.subtle.deriveBits(
-      {name:"PBKDF2", salt, iterations:100000, hash:"SHA-256"}, keyMaterial, 256
-    );
-    return new Uint8Array(bits);
+function createPeer(){
+  const cfg = {iceServers:[{urls:['stun:stun.l.google.com:19302']}]};
+  pc = new RTCPeerConnection(cfg);
+  pc.oniceconnectionstatechange = updateState;
+  pc.onconnectionstatechange = updateState;
+  pc.onicecandidate = e=>{
+    if(e.candidate) return; // attendre fin de la collecte pour une SDP « complète »
+    // rien : on lit pc.localDescription ci-dessous au moment voulu
+  };
+  pc.ondatachannel = (ev)=>{
+    dc = ev.channel;
+    bindDataChannel();
+  };
+  setBadge($('#webrtcBadge'),'WebRTC : prêt','');
+}
+function updateState(){
+  const s = `ICE: ${pc.iceConnectionState} — Connexion: ${pc.connectionState}`;
+  $('#state').textContent = s;
+  if(pc.connectionState==='connected'){
+    setBadge($('#webrtcBadge'),'WebRTC : connecté','ok');
   }
 }
 
-/* ---------- AES-GCM ---------- */
-async function encryptMessage(plain, password){
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const rawKey = await deriveKey(password, salt);
-  const key = await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt"]);
-  const ctBuf = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc.encode(plain));
-  const packet = {
-    v:1, alg:"AES-GCM", kdf:kdfMode,
-    params: kdfMode==="argon2id"? {time:3, mem:65536, par:1}:{iter:100000},
-    salt: b64u(salt), iv: b64u(iv), ct: b64(ctBuf)
+/* Créer Offre (initiateur) */
+$('#btnCreateOffer').addEventListener('click', async ()=>{
+  try{
+    await ensureKey();
+    createPeer();
+    dc = pc.createDataChannel('ns-chat');
+    bindDataChannel();
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    $('#offer').value = JSON.stringify(pc.localDescription);
+  }catch(err){ alert(err.message||err); }
+});
+$('#btnCopyOffer').addEventListener('click', async ()=>{
+  await navigator.clipboard.writeText($('#offer').value||'');
+});
+
+/* Appliquer Réponse (initiateur) */
+$('#btnApplyAnswer').addEventListener('click', async ()=>{
+  const ans = $('#answer').value.trim();
+  if(!ans) return alert('Colle la réponse SDP');
+  await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(ans)));
+});
+
+/* Répondeur : accepter une offre reçue */
+$('#btnAcceptOffer').addEventListener('click', async ()=>{
+  try{
+    await ensureKey();
+    createPeer();
+    const inc = $('#incomingOffer').value.trim();
+    if(!inc) return alert('Colle une offre SDP valide');
+    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(inc)));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    $('#generatedAnswer').value = JSON.stringify(pc.localDescription);
+  }catch(err){ alert(err.message||err); }
+});
+$('#btnCopyAnswer').addEventListener('click', async ()=>{
+  await navigator.clipboard.writeText($('#generatedAnswer').value||'');
+});
+
+$('#btnClearSig').addEventListener('click', ()=>{
+  $('#offer').value=''; $('#answer').value=''; $('#incomingOffer').value=''; $('#generatedAnswer').value='';
+});
+
+/* Canal de données : chiffrement/déchiffrement */
+function bindDataChannel(){
+  dc.onopen = ()=>addMsg('💡 Canal chiffré ouvert (tu peux écrire).','peer');
+  dc.onmessage = async (ev)=>{
+    try{
+      const obj = JSON.parse(ev.data);
+      const {iv, ct} = obj;
+      const ivU8 = Uint8Array.from(atob(iv), c=>c.charCodeAt(0));
+      const ctU8 = Uint8Array.from(atob(ct), c=>c.charCodeAt(0));
+      const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:ivU8}, cryptoKey, ctU8);
+      const text = new TextDecoder().decode(plain);
+      addMsg(text,'peer');
+    }catch(e){
+      addMsg('⚠️ Message reçu, impossible de déchiffrer (clé/mot de passe différent ?)','peer');
+    }
   };
-  return packet;
+  dc.onclose = ()=>addMsg('📵 Canal fermé','peer');
 }
 
-async function decryptPacket(packet, password){
-  const salt = unb64(packet.salt), iv = unb64(packet.iv);
-  // force mode selon paquet
-  if(packet.kdf==="argon2id" && !AOK()){ throw new Error("Argon2id requis mais indisponible (pas de réseau ?)"); }
-  const rawKey = await deriveKey(password, salt);
-  const key = await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["decrypt"]);
-  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, unb64(packet.ct));
-  return dec.decode(pt);
-}
+/* Envoi d’un message */
+$('#send').addEventListener('click', async ()=>{
+  const text = $('#msg').value.trim();
+  if(!text) return;
+  if(!dc || dc.readyState!=='open') return alert('Canal non connecté');
 
-/* ---------- UI actions (simple) ---------- */
-const plain=$("#plain"), cipher=$("#cipher");
-$("#encBtn").onclick = async ()=>{
   try{
-    if(!pw.value) return toast("⚠️ Mot de passe requis");
-    const p = await encryptMessage(plain.value||"", pw.value);
-    const j = JSON.stringify(p);
-    cipher.value = j;
-    // copie
-    try{ await navigator.clipboard.writeText(j); toast("Paquet copié"); }catch{}
-  }catch(e){ console.error(e); toast("Erreur chiffrement"); }
-};
-$("#decBtn").onclick = async ()=>{
-  try{
-    const p = JSON.parse(cipher.value||"{}");
-    const txt = await decryptPacket(p, pw.value||"");
-    plain.value = txt;
-    toast("Déchiffré");
-  }catch(e){ console.error(e); toast("Erreur déchiffrement"); }
-};
-$("#copyBtn").onclick = async ()=>{ try{await navigator.clipboard.writeText(cipher.value||""); toast("Copié");}catch{} };
-$("#clr1").onclick = ()=>{ plain.value=""; cipher.value=""; $("#qr").innerHTML="QR du paquet chiffré"; };
+    await ensureKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(text));
+    const ivB64 = btoa(String.fromCharCode(...iv));
+    const ctB64 = btoa(String.fromCharCode(...new Uint8Array(enc)));
+    dc.send(JSON.stringify({iv:ivB64, ct:ctB64}));
+    addMsg(text,'me');
+    $('#msg').value = '';
+  }catch(err){ alert(err.message||err); }
+});
 
-/* ---------- QR ---------- */
-$("#qrBtn").onclick = ()=>{
-  const txt = cipher.value.trim();
-  if(!txt) return toast("Rien à encoder");
-  const box = $("#qr"); box.innerHTML="";
-  try{ QRCode.toCanvas(document.createElement("canvas"), txt, {width:240}, (err, cv)=>{
-    if(err){ toast("QR impossible"); return;}
-    box.appendChild(cv);
-  }); }catch{ toast("QR indisponible"); }
-};
-
-/* ---------- Conversation locale ---------- */
-const chat=$("#chat"), chatInput=$("#chatInput"), inbound=$("#inbound");
-let chatHistory = JSON.parse(localStorage.getItem("ns_chat_history")||"[]");
-function renderChat(){
-  chat.innerHTML="";
-  chatHistory.forEach(m=>{
-    const b=document.createElement("div");
-    b.className="bubble " + (m.me?"me":"them"); b.textContent=m.text; chat.appendChild(b);
-  });
-  chat.scrollTop = chat.scrollHeight;
-}
-renderChat();
-
-let lastSent = "";
-$("#chatSend").onclick = async ()=>{
-  const text = chatInput.value.trim(); if(!text) return;
-  try{
-    const p = await encryptMessage(text, pw.value||"");
-    const j = JSON.stringify(p);
-    lastSent = j; await navigator.clipboard.writeText(j);
-    chatHistory.push({me:true, text}); localStorage.setItem("ns_chat_history", JSON.stringify(chatHistory));
-    chatInput.value=""; renderChat(); toast("Chiffré + copié");
-  }catch(e){ console.error(e); toast("Erreur"); }
-};
-$("#chatRecv").onclick = async ()=>{
-  try{
-    const p = JSON.parse(inbound.value||"{}");
-    const txt = await decryptPacket(p, pw.value||"");
-    chatHistory.push({me:false, text:txt}); localStorage.setItem("ns_chat_history", JSON.stringify(chatHistory));
-    inbound.value=""; renderChat(); toast("Message reçu");
-  }catch(e){ console.error(e); toast("Paquet invalide"); }
-};
-$("#chatCopy").onclick = async ()=>{ if(!lastSent) return toast("Rien à copier"); try{await navigator.clipboard.writeText(lastSent); toast("Dernier envoi copié");}catch{} };
+/* Init */
+createPeer();
 </script>
 </body>
 </html>
